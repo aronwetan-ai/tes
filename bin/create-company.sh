@@ -36,6 +36,7 @@ find "$TARGET_DIR" -type f -name "*.md" -print0 | while IFS= read -r -d '' file;
   sed -i "s/{{COMPANY_NAME}}/$COMPANY_NAME/g" "$file"
   sed -i "s/{{COMPANY_TYPE}}/$COMPANY_TYPE/g" "$file"
   sed -i "s/{{COMPANY_FOCUS}}/$COMPANY_FOCUS/g" "$file"
+  sed -i "s/{{COMPANY_SLUG}}/$SLUG/g" "$file"
 done
 
 cat >> "$BASE_DIR/tasks/company-index.jsonl" <<EOF
