@@ -1,9 +1,186 @@
 # AI Holding Project Summary
 
-Tanggal: 17 Mei 2026 — Update 9
+Tanggal: 17 Mei 2026 — Update 10
 Owner: Fathur
 Environment: WSL2 + Hermes + Telegram Bot + Online Provider API Key
 Repository: aronwetan-ai/tes
+
+---
+
+## Update 10 — NexusAI Deepening (17 Mei 2026)
+
+Branch: `feat/nexusai-deepen`
+
+### A. Tujuan
+
+Sebelum Update 10:
+- 7 parent skill files NexusAI ada tapi pendek (5–10 KB), generic SaaS context.
+- Knowledge folder lengkap struktur tapi cuma 8 file aktif (foundational SOPs).
+- Tools cuma 12 (foundational + Update 9 lifecycle ops).
+- NexusAI SOUL belum tied ke konteks bisnis riil Fathur (digital agency Indonesia).
+- Skill depth = "junior with cheatsheet". Belum "senior with playbook".
+
+Update 10 menyelesaikan:
+1. **Tier 2 SOUL agency-context**: NexusAI engineering output sekarang default ke konteks agency Fathur (multi-tenancy, OPSEC, multi-account, sustainable rate).
+2. **Skill depth**: 7 parent skills gain "Senior Patterns (Deep Dive)" sections. 3 agent-specific deep skills baru.
+3. **Knowledge breadth**: 20 cheatsheet baru (clean-arch, AGILE, DDD, OWASP, OPSEC, dll.).
+4. **Tooling breadth**: 10 tools baru (5 utility + 5 agency-context).
+5. **Scope clarity**: 2 tool kategori declined dengan substitusi terdokumentasi (`declined-tools.md`).
+
+### B. Yang Dieksekusi
+
+#### B.1 SOUL update (1 file)
+- `companies/nexusai/SOUL.md` v1.1: section "Agency Context (Update 10)" baru — defines 6 operational priorities (multi-tenancy, credential compartmentalization, anti-leak, OPSEC-aware, sustainable rate, reporting-ready), maps 8 agency activities to NexusAI agents/skills/tools, lists 2 declined tools dengan substitusi. Knowledge Loading section diperluas reference ke 19 file domain knowledge baru.
+
+#### B.2 Skill deepening (7 parent + 3 deep = 10 file)
+
+7 parent skills gain "Senior Patterns (Deep Dive)" appended:
+
+| Skill | Deepening highlights |
+|---|---|
+| coding | Architecture decision tree, multi-tenant patterns (RLS), error categorization, API contract patterns, boring-tech baseline. |
+| devops | Deploy strategy decision tree, 12-factor compliance defaults, multi-tenant infra, observability triage, secrets handling, DR checklist. |
+| security | STRIDE applied (worked example), OWASP Top 10 cheatsheet, auth patterns, OPSEC playbook, credential vault discipline, incident response. |
+| ml-agent | Agent design pattern, prompt-as-code, eval methodology Tier 1/2/3, prompt injection defenses, cost control, agency-context AI tooling map. |
+| automation | Multi-account orchestration template, cold outreach pipeline, scraping pipeline, idempotency/checkpoint/DLQ patterns, cron discipline. |
+| qa | Senior code review priority order, agency-scale AC dimensions, test strategy by code type, bug severity, deepened review template. |
+| uiux | SaaS dashboard archetype, client switcher (multi-tenant UX), form patterns, state hierarchies, a11y baseline, design tokens. |
+
+3 agent-specific deep skills (extends parent, owned by one agent):
+- `skills/security/threat-modeling.md` — STRIDE/DREAD/Attack-Tree methodology + 9 common multi-tenant SaaS threats.
+- `skills/qa/acceptance-criteria-templates.md` — 10 AC templates (T1–T10): CRUD/Form/Job/Integration/MultiTenant/AIAgent/Migration/Auth/Reporting/Outreach.
+- `skills/ml-agent/prompt-eval.md` — Tier 1/2/3 grader pattern, eval file layout, adversarial cases, cost-aware eval, regression suite.
+
+#### B.3 Knowledge breadth (20 file baru, Opsi 2 senior cheatsheet style)
+
+| Folder | Files |
+|---|---|
+| `knowledge/software/` | api-design, twelve-factor, clean-architecture, ddd-cheatsheet, cicd-patterns, code-review-checklist, frontend-state, cap-and-consistency, observability, postgres-prod, auth-patterns, tech-writing, adr-format (12 file) |
+| `knowledge/security/` | owasp-top10, threat-modeling-stride, incident-runbook, opsec-multi-account (4 file) |
+| `knowledge/agile/` | scrum-kanban, agile-manifesto (2 file) |
+| `knowledge/ml/` | prompt-engineering, eval-methodology (2 file) |
+| `knowledge/scope/` | declined-tools (1 file, scope documentation) |
+
+Style: 5–10 KB each, decision trees, anti-patterns explicit, agency-context aware (multi-tenant, OPSEC, sustainable rate). Cross-reference each other dan back to skills/SOULs.
+
+#### B.4 Tooling breadth (10 tools baru, semua py_compile clean + --help works)
+
+**Local utility (Risk=Low, semua whitelistable):**
+
+| Tool | Purpose |
+|---|---|
+| `tools/json_schema_check.py` | Validate JSON files against schema; stdlib fallback when `jsonschema` lib unavailable. |
+| `tools/markdown_lint.py` | Doc quality lint (heading hierarchy, broken links, trailing ws, code fences, line length). Pure stdlib. |
+| `tools/dep_audit.py` | Wraps pip / npm dep auditors. Read-only, never mutates. |
+| `tools/api_health.py` | Single-URL GET probe + p50/p95/max latency. urllib stdlib. |
+| `tools/prompt_eval.py` | Local YAML-driven eval runner with 10 grader types. NO LLM calls. |
+
+**Agency-context (mixed risk):**
+
+| Tool | Risk | Purpose |
+|---|---|---|
+| `tools/cred_vault.py` | Medium | AES-256-GCM per-client encrypted vault. 9 sub-cmds. Mixed approval per sub-cmd. |
+| `tools/secret_scanner.py` | Low | 18-pattern secret leak scan. `--staged`, `--since rev..rev`, comment annotations. |
+| `tools/exif_extract.py` | Low | EXIF metadata + GPS DMS→decimal. Pillow preferred, JPEG fallback. |
+| `tools/reverse_image_lookup.py` | Low | URL builder for Google Lens / Yandex / TinEye / Bing / SauceNAO. SHA fingerprints for local. |
+| `tools/osint_lookup.py` | Low | Phone/email/username pivot URL builder + 30-platform Sherlock-style HEAD probe. |
+
+#### B.5 Tool registry update
+
+`knowledge/tools/tool-registry.md` v1.3:
+- Quick Reference table: 22 entries (TOOL-001..022).
+- 10 new full entries (TOOL-013..022) with Risk/Status/Whitelisted/Approval/Depends.
+- Three OSINT tools (exif/reverse-image/osint-lookup) explicitly cross-reference `declined-tools.md` as substitutes for face recognition.
+
+#### B.6 SKILLS index update
+
+`companies/nexusai/SKILLS.md` v1.1:
+- Split into Parent skills (7) + Agent-specific deep skills (3 new).
+- "What Was Deepened" section: one-line summary per parent skill's Senior Patterns block.
+- Tools Available section: 10 new tools + foundational.
+- Knowledge References section: all 20 new knowledge files organized by category.
+- Adding New Skills section: documents parent/deep-skill split convention with `agent_specific` + `parent_skill` front-matter fields.
+
+### C. Two Tools Declined (Documented)
+
+`knowledge/scope/declined-tools.md` documents 2 tool categories declined regardless of framing:
+
+1. **Generic face recognition / biometric matching tooling**.
+   Substituted by: `tools/exif_extract.py` + `tools/reverse_image_lookup.py` + `tools/osint_lookup.py` (identifier-pivot OSINT). 95% of investigative work works through identifier pivots, not biometrics.
+
+2. **Mass spam via proxy abuse / coordinated platform abuse**.
+   Substituted by: deepened `skills/automation` (sustainable rate-limited multi-account outreach from own accounts) + deepened `skills/devops` (load testing against own infra) + `skills/qa` (product-internal A/B harness).
+
+Per Fathur's instruction at the time of conversation, these decisions are documented in the repo. Conversation log preserved in this PR's description.
+
+### D. Total File Changes
+
+```
+Created (10 tools):
+  tools/json_schema_check.py
+  tools/markdown_lint.py
+  tools/dep_audit.py
+  tools/api_health.py
+  tools/prompt_eval.py
+  tools/cred_vault.py
+  tools/secret_scanner.py
+  tools/exif_extract.py
+  tools/reverse_image_lookup.py
+  tools/osint_lookup.py
+
+Created (3 deep skills):
+  companies/nexusai/skills/security/threat-modeling.md
+  companies/nexusai/skills/qa/acceptance-criteria-templates.md
+  companies/nexusai/skills/ml-agent/prompt-eval.md
+
+Created (20 knowledge files):
+  knowledge/software/{api-design,twelve-factor,clean-architecture,
+                      ddd-cheatsheet,cicd-patterns,code-review-checklist,
+                      frontend-state,cap-and-consistency,observability,
+                      postgres-prod,auth-patterns,tech-writing,adr-format}.md
+  knowledge/security/{owasp-top10,threat-modeling-stride,incident-runbook,
+                      opsec-multi-account}.md
+  knowledge/agile/{scrum-kanban,agile-manifesto}.md
+  knowledge/ml/{prompt-engineering,eval-methodology}.md
+  knowledge/scope/declined-tools.md
+
+Modified (10 files):
+  companies/nexusai/SOUL.md                    (v1.1 — agency context)
+  companies/nexusai/SKILLS.md                  (v1.1 — index update)
+  companies/nexusai/skills/coding/SKILL.md     (Senior Patterns added)
+  companies/nexusai/skills/devops/SKILL.md     (Senior Patterns added)
+  companies/nexusai/skills/security/SKILL.md   (Senior Patterns added)
+  companies/nexusai/skills/ml-agent/SKILL.md   (Senior Patterns added)
+  companies/nexusai/skills/automation/SKILL.md (Senior Patterns added)
+  companies/nexusai/skills/qa/SKILL.md         (Senior Patterns added)
+  companies/nexusai/skills/uiux/SKILL.md       (Senior Patterns added)
+  knowledge/tools/tool-registry.md             (v1.3 — 22 entries)
+  MEMORY.md                                    (v2.3)
+  memory/global.md                             (v2.3)
+  summary.md                                   (this section)
+```
+
+34 files total: 33 created + 13 modified.
+
+### E. Dampak Operasional
+
+Sebelum:
+- NexusAI agent: generic SaaS engineer.
+- Knowledge: 8 foundational files; agent has SOP but no senior playbook.
+- Tools: 12 (foundational + lifecycle); no domain depth tooling.
+- Agent doesn't natively think in agency terms (multi-tenant, OPSEC, multi-account).
+
+Sesudah:
+- NexusAI agent: senior engineer with agency-context playbook.
+- Knowledge: 28 files total (8 foundational + 20 cheatsheet); decision trees, anti-patterns, multi-tenant patterns explicit.
+- Tools: 22 active (12 + 10); agency operational coverage (cred vault, secret scanner, OSINT, EXIF, reverse-image, prompt eval, dep audit, etc.).
+- Every skill default-references the agency context — when `@nexusai.backend` designs an API, "tenant isolation + RLS" is the default mental model, not an afterthought.
+
+### F. Yang Belum Selesai (next PRs)
+
+1. **BrandFlow deepening (Update 11)** — same pattern: Tier 2 SOUL agency-context, 7 skills deepen, agent-specific deep skills, 15–20 knowledge files (marketing-specific), 5–10 tools (content scheduling, social monitoring, etc.).
+2. **Crypto Consultant deepening (Update 12)** — same pattern: research framework deepening, 5–10 crypto-specific knowledge files (cycle theory, on-chain methodology, macro overlay), 5–10 tools (API wrappers).
+3. **Smoke test sweep**: run new tools against real artifacts in repo (validate task logger schemas, lint all knowledge files, audit Python deps).
 
 ---
 

@@ -1,7 +1,7 @@
 # MEMORY.md — AI Holding Strategic Memory
 
-Versi: 2.2
-Update terakhir: 2026-05-17 (post Update 9 — Tahap G complete)
+Versi: 2.3
+Update terakhir: 2026-05-17 (post Update 10 — NexusAI deepening)
 Owner: Fathur
 Scope: Holding-level strategic state. **Read this at session start.**
 
@@ -59,6 +59,9 @@ Inheritance: Root → Company → Agent. Konflik prinsip → atas menang. Konfli
 10. **Tier 3 SOUL coverage**: setiap role aktif di `AGENTS.md` punya Tier 3 SOUL (32 file total, post Update 9). Tidak ada lagi role yang fall-back ke Tier 2 boilerplate.
 11. **Hermes whitelist policy**: Risk=Low + read-only + no-secrets + no-mutation = auto-approve. Risk=Medium/High selalu konfirmasi. Detail di `knowledge/tools/hermes-whitelist.md`.
 12. **Archival workflow**: terminal task (DONE/CANCELLED) > 30 hari → `archive/<YYYY-MM>.jsonl` per company. `logs.jsonl` NEVER diarsipkan (audit trail). Idempotent + dry-run support.
+13. **Agency context for NexusAI**: Fathur menjalankan digital agency Indonesia (performance marketing + AI automation, target 20–50 client dalam 12 bulan). NexusAI engineering output prioritas: multi-tenancy, credential compartmentalization, anti-leak workflow, OPSEC-aware automation, sustainable rate, reporting-ready output.
+14. **Declined-tools scope**: 2 kategori tool tidak dibangun di repo ini terlepas dari framing — generic face recognition + mass-spam-via-proxy. Substitusi tersedia (EXIF + reverse-image + OSINT untuk yang pertama; sustainable rate-limited outreach + load-testing-against-own-infra untuk yang kedua). Detail di `knowledge/scope/declined-tools.md`.
+15. **Skill structure NexusAI (post Update 10)**: parent skill (multi-agent) + agent-specific deep skill (extends parent, owned by one agent). Front-matter `agent_specific` + `parent_skill` fields menandai deep skill.
 
 ---
 
@@ -82,7 +85,12 @@ AI Holding Workspace (~/ai-holding)
 │   crypto-consultant/ (11 agents, 7     │
 │     skills)                             │
 │ tools/ (3 active: fear_greed.py,        │
-│   btc_price.py, news_sentiment.py)      │
+│   btc_price.py, news_sentiment.py;      │
+│   + 10 Update 10 tools: json_schema,    │
+│   markdown_lint, dep_audit, api_health, │
+│   prompt_eval, cred_vault, secret_      │
+│   scanner, exif_extract, reverse_image_ │
+│   lookup, osint_lookup)                 │
 │ tasks/ (company-index.jsonl)            │
 │ memory/ (global.md — operational log)  │
 │ bin/ (create-company.sh,                │
@@ -118,8 +126,12 @@ Tier 3 SOULs: 32 dari 32 — full coverage post Update 9.
 |---|---|
 | `knowledge/core/` | `principles.md` — cara berpikir umum semua agent |
 | `knowledge/agent-design/` | `memory-rules.md`, `tool-use-rules.md`, `task-logger-rules.md` |
-| `knowledge/tools/` | `tool-registry.md`, `hermes-whitelist.md` |
-| `knowledge/software/` | `software-development-sop.md` (NexusAI domain) |
+| `knowledge/tools/` | `tool-registry.md` (22 entries post Update 10), `hermes-whitelist.md` |
+| `knowledge/scope/` | `declined-tools.md` — what is NOT built (post Update 10) |
+| `knowledge/software/` | `software-development-sop.md` (NexusAI SOP, foundational) + 13 senior cheatsheets (post Update 10): clean-architecture, api-design, twelve-factor, ddd-cheatsheet, cicd-patterns, code-review-checklist, frontend-state, cap-and-consistency, observability, postgres-prod, auth-patterns, tech-writing, adr-format |
+| `knowledge/security/` | (post Update 10) `owasp-top10.md`, `threat-modeling-stride.md`, `incident-runbook.md`, `opsec-multi-account.md` |
+| `knowledge/agile/` | (post Update 10) `scrum-kanban.md`, `agile-manifesto.md` |
+| `knowledge/ml/` | (post Update 10) `prompt-engineering.md`, `eval-methodology.md` |
 | `knowledge/marketing/` | `marketing-sop.md` (BrandFlow domain) |
 | `knowledge/crypto/` | `crypto-research-framework.md` (Crypto domain) |
 | `knowledge/sop/` | `README.md` — reusable skill library |
