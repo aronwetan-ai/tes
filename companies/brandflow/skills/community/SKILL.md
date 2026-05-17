@@ -114,3 +114,188 @@ For crisis early warning:
 - `companies/brandflow/SOUL.md`
 - `companies/brandflow/agents/community.md`
 - Root SOUL — Boundary #4.
+
+
+---
+
+## Senior Patterns (Deep Dive) — Update 11
+
+The senior community-manager playbook for agency-context work — handling DMs/comments/mentions across multiple client brands without breaking voice and without violating Boundary #4.
+
+### 1. Multi-Brand Reply Voice Discipline
+
+A community manager works across 5-15 client brands per day. Each has a distinct voice. The hard part isn't writing replies — it's **switching context** without leaking brand A's voice into brand B's reply.
+
+Pre-shift checklist (before any reply session for a client):
+
+```
+[ ] Loaded companies/brandflow/clients/<client>/voice.md
+[ ] Loaded last 10 published posts from this brand (to absorb current rhythm)
+[ ] Reviewed pinned crisis-watch flags (if any)
+[ ] Confirmed approval mode: per-message / pre-approved categories / hold-all
+```
+
+If you skip the pre-shift, you'll write a reply in your own voice (or in the voice of the previous client). Those replies *are* noticeable — the client's audience reads them as "the bot wrote that."
+
+### 2. Triage Matrix v2 (Expanded from Basic)
+
+| Situation | Severity | Default action |
+|---|---|---|
+| Genuine question, low complexity | LOW | Draft warm reply, queue for batch approval |
+| Genuine question, high complexity / ambiguous | MED | Draft + flag PM/CMO with options |
+| Praise / positive engagement | LOW | Draft brief reply, queue for batch approval |
+| Mild criticism (factually fixable) | MED | Draft empathetic ack + offer DM channel; flag CMO |
+| Heated criticism (public complaint) | HIGH | **Do not draft yet.** Acknowledge receipt internally, escalate to CMO + CEO |
+| Spam / bot / off-topic | LOW | Hide/ignore. Do not engage. |
+| Influencer / journalist / PR-relevant | HIGH | **Stop.** Flag CMO + CEO. They decide tone and escalation. |
+| Threat / legal language / harassment | CRITICAL | **Stop. No reply.** Flag CEO + Fathur. Document timestamp + screenshot. |
+| Cluster: 3+ similar complaints in 1h | HIGH | Flag CMO immediately — possible product/campaign issue |
+| Sentiment shift across day (>15% to negative) | HIGH | Flag CMO; pause auto-publish until reviewed |
+| DM from competitor/poacher | MED | Polite acknowledge or ignore; never share intel |
+| Job inquiry / partnership pitch | LOW-MED | Route to designated email; do not negotiate in DM |
+
+### 3. Reply Voice Calibration (3-Beat Reply)
+
+Most replies should be 3 beats, not more:
+
+```
+BEAT 1 — ACKNOWLEDGE
+   Mirror back what they said in 1 line.
+   "Wah, makasih sudah baca dan share pengalaman ini."
+
+BEAT 2 — ADDRESS
+   Answer / clarify / sympathize. Concrete.
+   "Soal pricing, plan paling kecil mulai 99k/bln, all-in."
+
+BEAT 3 — CLOSE (only if natural)
+   Open door OR end clean. Don't force.
+   "DM aja kalau mau kita bantu mapping plan-nya."
+```
+
+Anti-pattern: 5-beat replies that read as customer-support-template. They feel robotic even when the words are warm.
+
+### 4. Reply Timing Rules
+
+| Channel | Target ack time |
+|---|---|
+| IG DM | < 1h business hours, < 8h overnight |
+| IG comment on owned post | < 2h business hours |
+| IG mention/tag | < 4h business hours |
+| LinkedIn DM | < 4h business hours |
+| LinkedIn comment | < 2h business hours |
+| X reply / mention | < 1h business hours (X moves fast) |
+| TikTok comment | < 4h |
+| Email | < 24h business hours |
+
+"Ack time" ≠ "resolution time." Acknowledge fast, resolve well. A 30-second "we're checking, will follow up" beats 6 hours of silence followed by a perfect answer.
+
+### 5. The "Drop the Rope" Pattern (Trolls / Bait)
+
+Some comments exist to bait engagement. Engaging fuels them.
+
+Recognize the bait:
+- Personal attack on the brand or operator.
+- Loaded political / cultural framing demanding a hot take.
+- Repetitive same-account replies escalating in tone.
+- Strawman of brand position followed by demand to defend.
+
+Drop-the-rope playbook:
+
+1. Don't reply.
+2. If on owned channel, hide/limit (not delete — deletion can be screenshot and flipped into "they silenced critics").
+3. If repeating, mute the account.
+4. If pattern is coordinated (multiple accounts, same talking points, sub-1-week-old accounts), document and flag CEO. Don't engage publicly under any circumstance.
+5. Never explain to the troll why you're not engaging. The explanation itself feeds engagement.
+
+### 6. Crisis Early Warning (Reading the Signal Before It's a Crisis)
+
+Senior community managers detect **the slope** before the spike. Watch for:
+
+| Signal | What it means | Response |
+|---|---|---|
+| Mention volume up 3-5× normal in 1 hour | Something is propagating | Read the source posts before drafting anything |
+| Sentiment ratio flipping to >40% negative on a single piece | Content misfired | Pause boosting/scheduling related pieces; flag CMO |
+| Question cluster: 5+ asking the same thing | Confusion/missing info | Draft FAQ; consider pinned reply |
+| Complaint cluster: 3+ same root cause | Real issue (product, pricing, copy) | Flag CMO + relevant company (NexusAI etc.) |
+| Big account quotes/screen-grabs your post critically | Possible viral negative cycle | Brief CEO immediately; hold-all-replies until decision |
+| Account that mentioned you 10× last month suddenly silent | Possibly preparing public criticism elsewhere | Monitor; do not chase |
+
+Reference the full crisis flow in `knowledge/marketing/crisis-comms-playbook.md` and the deep skill `companies/brandflow/skills/community/crisis-playbook.md`.
+
+### 7. Boundary #4 Operationalized in Community Work
+
+This skill is the front line of Boundary #4. Operational rules:
+
+- **Per-message approval** for any send-as-Fathur reply. There is no blanket "auto-reply on Fathur's IG."
+- **Pre-approved categories** for sends-as-client are allowed only after written sign-off from CMO + Fathur per client. Categories are narrow (e.g. "thank you for follow", "pricing FAQ pointer"). Anything outside pre-approved categories → individual approval.
+- **No promises ever.** Refunds, discounts, partnership commitments, fixes, timelines — never on community-manager authority. Always "Let me check with the team and get back to you."
+- **No medical / financial / legal advice.** Hard line. Even if the brand is in those domains. Refer to qualified professional or to the brand's documented FAQ.
+- **No off-the-cuff brand position takes** on politics, religion, or current events unless the brand has a published stance the operator can quote verbatim.
+
+### 8. Reply-Approval Queue Format
+
+Replies queue in a single JSONL line per item, in-flight in `companies/brandflow/clients/<client>/reply-queue.jsonl`:
+
+```json
+{
+  "id": "RQ-2026-05-17-0042",
+  "client": "client-x",
+  "incoming": {
+    "channel": "instagram",
+    "thread_id": "...",
+    "from_handle": "@user",
+    "content": "Pricing-nya brp ya kak?",
+    "received_at": "2026-05-17T03:14:22Z",
+    "sentiment": "neutral",
+    "category": "pricing_faq"
+  },
+  "draft": "Halo! Plan basic mulai 99k/bln. Detail lengkap di link bio ya 🙌",
+  "voice_check": "passed",
+  "boundary4": "pre_approved_category",
+  "priority": "normal",
+  "owner": "@brandflow.community",
+  "status": "AWAITING_APPROVAL",
+  "approver": "@brandflow.cmo",
+  "approved_at": null,
+  "sent_at": null,
+  "thread_link": "https://...",
+  "notes": ""
+}
+```
+
+Status state machine:
+
+```
+DRAFTED → AWAITING_APPROVAL → APPROVED → SENT
+                          ↘ REJECTED → REVISED → AWAITING_APPROVAL
+                          ↘ ESCALATED (to CMO/CEO) → DECISION → ...
+                          ↘ DROPPED (drop-the-rope, with reason)
+```
+
+### 9. Sentiment Reporting Cadence
+
+| Cadence | Output | For |
+|---|---|---|
+| End-of-day | 5-line summary: volume, sentiment ratio, flags | Self + PM |
+| Weekly | Per-client sentiment + top 3 themes + crisis-watch | CMO + client report |
+| Monthly | Trend lines + theme drift + recommendations | CEO + client retainer review |
+| On-demand crisis | Real-time updates every 30-60 min until resolved | CEO + Fathur |
+
+### 10. Anti-Patterns Senior Community Managers Don't Ship
+
+- **Auto-publishing replies** without per-piece check (Boundary #4 violation, even on a client account).
+- **Fighting in the comments.** Never. Drop the rope.
+- **"Hi [Name], thanks so much for reaching out!"** template intros — robotic, sycophantic, instantly recognized.
+- **Promising fixes you can't deliver.** "We'll fix this by Monday" without engineering buy-in.
+- **Engaging trolls "just to set the record straight."** The record cannot be straightened in their venue. Document elsewhere.
+- **Replying in your voice across all clients.** Each client has a profile; switch context.
+- **Hiding all critical comments.** Some criticism is legitimate; hiding it backfires when screenshot.
+- **Sharing internal info "off the record" in DMs.** There is no off-the-record online.
+
+### Reference
+
+- `knowledge/marketing/crisis-comms-playbook.md` (full crisis flow).
+- `knowledge/marketing/brand-voice-rubric.md` (per-client voice profiles).
+- `companies/brandflow/skills/community/crisis-playbook.md` (Update 11 deep skill — escalation tiers, holding statements, recovery arc).
+- `tools/social_monitor.py` (Update 11 — sentiment + mention scan + cluster detection).
+- Root SOUL — Boundary #4.
