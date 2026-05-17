@@ -1,9 +1,158 @@
 # AI Holding Project Summary
 
-Tanggal: 17 Mei 2026 — Update 8
+Tanggal: 17 Mei 2026 — Update 9
 Owner: Fathur
 Environment: WSL2 + Hermes + Telegram Bot + Online Provider API Key
 Repository: aronwetan-ai/tes
+
+---
+
+## Update 9 — Tahap G Complete (17 Mei 2026)
+
+Branch: `feat/task-logger-jsonl` (extends Update 8 PR #6)
+
+### A. Tujuan
+
+Update 9 menyelesaikan **semua sisa Tahap G** yang ditandai PLANNED / on-demand sejak Update 3-8:
+
+1. **Tools tambahan** — `btc_price.py` + `news_sentiment.py` (PLANNED sejak Update 3 → Active).
+2. **Tier 3 SOULs untuk role sisa** — 14 file baru → coverage 32/32 (was 18/32).
+3. **Hermes hardening** — whitelist policy untuk tool auto-approval.
+4. **Lifecycle ops** — archival (`archive_tasks.py`, `archive_messages.py`) + recap (`recap_manager.py`) yang sebelumnya hanya rule, sekarang ada implementasinya.
+
+### B. Yang Dieksekusi
+
+#### B.1 Tools tambahan (2 file)
+
+| File | API | Risk | Output |
+|---|---|---|---|
+| `tools/btc_price.py` | CoinGecko (free, no key) | Low | Price + 24h change + market cap + volume + last-updated |
+| `tools/news_sentiment.py` | CryptoPanic (free public feed) | Low | Headlines + per-item sentiment (keyword heuristic) + summary skew |
+
+Both have `--json` mode for machine-readable output. Both honest about limitations: `news_sentiment.py` explicitly disclaims that its classifier is keyword-based, not full NLP.
+
+#### B.2 Lifecycle ops (3 file)
+
+| File | Purpose | Reuses |
+|---|---|---|
+| `bin/archive_tasks.py` | Move terminal tasks > N days from `inbox.jsonl` to `archive/<YYYY-MM>.jsonl` | `task_logger.py` |
+| `bin/archive_messages.py` | Same for `messages.jsonl` → `messages-archive/<YYYY-MM>.jsonl` | `task_logger.py` |
+| `bin/recap_manager.py` | Windowed recap (daily/weekly/monthly/custom) → `recap.jsonl` | `task_logger.py` |
+
+All three:
+- `--dry-run` support (whitelistable).
+- `--quiet` for cron-friendly one-line output.
+- Idempotent (re-running safe; archive bucket dedupes by ID; recap appends).
+- Read `AI_HOLDING_HOME` env override.
+- Audit `ARCHIVE` events go to `logs.jsonl` (which itself is NEVER archived).
+
+#### B.3 Tier 3 SOULs lengkap (14 file baru)
+
+```
+NexusAI (+4):     pm, frontend, qa, writer
+BrandFlow (+5):   pm, seo, analytics, qa, writer
+Crypto (+5):      pm, data, qa, report, writer
+```
+
+Sekarang **32 dari 32** active role di `AGENTS.md` punya Tier 3 SOUL — tidak ada lagi yang fall-back ke Tier 2 boilerplate.
+
+Catatan domain-specific:
+- `@brandflow.qa` & `@crypto.qa` punya **auto-reject banlist** untuk language yang melanggar Boundary #4 / financial advice posture.
+- `@crypto.report` punya **mandatory disclaimer block** verbatim — tidak ada artifact crossing the boundary tanpa itu.
+- `@crypto.data` distinguish dari `@crypto.onchain` (data structure layer vs forensic analysis).
+- `@brandflow.writer` distinguish dari `@brandflow.copywriter` (long-form / institutional vs short-form / hook-driven).
+- `@nexusai.writer` distinguish dari `@brandflow.writer` (technical reference vs brand voice).
+
+#### B.4 Hermes whitelist policy
+
+`knowledge/tools/hermes-whitelist.md` — authoritative policy:
+
+- **7 eligibility rules** (Risk Low + read-only + no-secrets + no-external-mutation + bounded-cost + deterministic + observable).
+- **Current whitelist recommendation**: 4 fully-whitelisted tools (`fear_greed.py`, `btc_price.py`, `news_sentiment.py`, `list_tasks.py`) + 3 dry-run-only (`recap_manager.py`, `archive_tasks.py`, `archive_messages.py`).
+- **Illustrative YAML config** for Hermes (Fathur applies in WSL — outside repo).
+- **Audit + revocation rules**.
+
+`knowledge/tools/tool-registry.md` Versi 1.2:
+- Quick reference table tambah kolom **Whitelisted**.
+- 4 tool entry baru (TOOL-002 + TOOL-003 + TOOL-010..012) sebagai Active (was PLANNED).
+
+#### B.5 Memory + docs
+
+- `task-logger-rules.md` — section "Archival Operations" + "Recap Operations" baru dengan command examples + cron cadence + anti-patterns.
+- `MEMORY.md` (root) v2.2 — strategic decision #10-12 added; folder layout reflect 3 tools active.
+- `memory/global.md` v2.2 — 5 `[DECISION]` baru, 4 `[ARCH]` baru, 6 `[TOOL]` updated dari PLANNED → Active.
+
+### C. Total File Changes
+
+```
+Created (tools):
+  tools/btc_price.py
+  tools/news_sentiment.py
+
+Created (lifecycle ops):
+  bin/archive_tasks.py
+  bin/archive_messages.py
+  bin/recap_manager.py
+
+Created (Tier 3 SOULs — 14 file):
+  companies/nexusai/agents/pm.md
+  companies/nexusai/agents/frontend.md
+  companies/nexusai/agents/qa.md
+  companies/nexusai/agents/writer.md
+  companies/brandflow/agents/pm.md
+  companies/brandflow/agents/seo.md
+  companies/brandflow/agents/analytics.md
+  companies/brandflow/agents/qa.md
+  companies/brandflow/agents/writer.md
+  companies/crypto-consultant/agents/pm.md
+  companies/crypto-consultant/agents/data.md
+  companies/crypto-consultant/agents/qa.md
+  companies/crypto-consultant/agents/report.md
+  companies/crypto-consultant/agents/writer.md
+
+Created (docs):
+  knowledge/tools/hermes-whitelist.md
+
+Modified:
+  knowledge/tools/tool-registry.md           (Versi 1.2)
+  knowledge/agent-design/task-logger-rules.md (Archival + Recap sections)
+  MEMORY.md                                   (Versi 2.2)
+  memory/global.md                            (Versi 2.2)
+  summary.md                                  (this section)
+```
+
+20 file dibuat baru, 5 file dimodifikasi, 0 dihapus.
+
+### D. Dampak Operasional
+
+Sebelum:
+- `@crypto.market` mau cek harga BTC live → tidak ada tool, harus claim "tidak punya akses real-time".
+- `@brandflow.analytics` mau scan headline sentiment → tidak ada tool.
+- 14 role di-fallback ke Tier 2 SOUL boilerplate, voice tidak khas role.
+- Hermes minta approval setiap kali agent jalankan `fear_greed.py` — friksi tinggi.
+- Aturan archival ada di doc, tapi tidak ada cara eksekusi.
+- Recap manual setiap kali Fathur tanya status.
+
+Sesudah:
+- `@crypto.market` panggil `btc_price.py` langsung — auto-approve via whitelist.
+- `@brandflow.analytics` punya akses headline sentiment scan dengan disclaimer ke methodology.
+- Setiap role aktif punya voice + decision authority + output format spesifik.
+- 4 tool read-only auto-run di Hermes; tool mutating tetap gated.
+- `bin/archive_tasks.py` rapi-rapi inbox.jsonl mingguan; `bin/recap_manager.py` generate weekly digest otomatis.
+- Crypto QA + Crypto Report punya guard yang eksplisit (banlist + mandatory disclaimer) — Boundary #4 tidak bisa terlewat.
+
+### E. Smoke Test
+
+Akan dilakukan post-commit untuk `archive_tasks.py` (dry-run) + `recap_manager.py --dry-run` + `list_tasks.py` (read-only, no real data needed).
+
+`btc_price.py` + `news_sentiment.py` sandbox tidak punya internet ke CoinGecko/CryptoPanic — code-review sufficient; Fathur verifikasi live di WSL post-merge.
+
+### F. Yang Belum Selesai (untuk PR berikutnya — Tahap H)
+
+1. **Hermes config apply** — Fathur eksekusi di WSL berdasarkan `hermes-whitelist.md` template. Di luar repo.
+2. **Cron setup** — weekly archival + recap. Di luar repo (WSL crontab).
+3. **Migration prep ke Telegram Topics (Option C)** — setelah semua Tahap A-G stabil di Option A.
+4. **Live verification** — `btc_price.py` + `news_sentiment.py` di WSL dengan internet access.
 
 ---
 

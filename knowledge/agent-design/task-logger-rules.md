@@ -244,9 +244,108 @@ History tersimpan di `context.history[]` per task + audit trail di `logs.jsonl`.
 ## Maintenance
 
 - File `inbox.jsonl` boleh besar — filter pakai `list_tasks.py`, jangan baca manual.
-- Saat `inbox.jsonl` company > ~500 baris, arsipkan terminal tasks (`DONE`/`CANCELLED`/`FAILED` tanpa retry) ke `tasks/archive/<YYYY-MM>.jsonl`. Pertahankan task aktif di `inbox.jsonl`.
+- Saat `inbox.jsonl` company > ~500 baris, arsipkan terminal tasks via `bin/archive_tasks.py` (lihat section Archival di bawah).
 - `logs.jsonl` jangan diarsipkan tanpa konfirmasi user — ini compliance/audit trail.
-- `messages.jsonl` lama (> 30 hari, sudah dibaca) boleh diarsipkan ke `messages-archive.jsonl`.
+- `messages.jsonl` lama bisa diarsipkan via `bin/archive_messages.py` (lihat section Archival).
+
+---
+
+## Archival Operations (post Update 9)
+
+### Task Archival — `bin/archive_tasks.py`
+
+Move terminal tasks older than N days from `inbox.jsonl` to `companies/<co>/tasks/archive/<YYYY-MM>.jsonl`.
+
+**Behavior:**
+- Eligible statuses: `DONE`, `CANCELLED`. `FAILED` is NOT auto-archived (it may still be retried — explicit cancel first if you want it gone).
+- Cutoff: `--older-than N` days based on `updated_at` (default 30).
+- Bucket per month: `archive/2026-04.jsonl`, `archive/2026-05.jsonl`, etc.
+- Idempotent: re-running won't duplicate (matches by task ID in target bucket).
+- Audit: every archived task gets an `ARCHIVE` event in `logs.jsonl` (logs.jsonl itself is NEVER archived — it's the audit trail).
+- Dry-run: `--dry-run` shows what would move without writing. Whitelistable.
+
+**Recommended cadence:**
+- Weekly cron: `0 3 * * 0 cd ~/ai-holding && python3 bin/archive_tasks.py --quiet`
+- Manual when company `inbox.jsonl` > 200 rows.
+
+**Examples:**
+```bash
+bin/archive_tasks.py --dry-run                     # preview all companies
+bin/archive_tasks.py --company nexusai --older-than 60   # only nexusai, > 60 days
+bin/archive_tasks.py --quiet                       # apply, one-line summary
+```
+
+### Message Archival — `bin/archive_messages.py`
+
+Same behavior as task archival but for `messages.jsonl` → `messages-archive/<YYYY-MM>.jsonl`. Idempotent matching key is `company|from|to|created_at|message[:80]`.
+
+**Examples:**
+```bash
+bin/archive_messages.py --dry-run --older-than 30
+bin/archive_messages.py --company brandflow --older-than 14
+```
+
+### What Is Never Archived
+
+- `logs.jsonl` — append-only audit trail. Stays whole. If it gets very large (> 50MB per company), discuss with Fathur before any compaction.
+- `recap.jsonl` — generated artifact. Keep all entries; they're already a digest layer.
+- Active tasks (`NEW`, `IN_PROGRESS`, `RETRY`, `FAILED`) — stay in inbox until terminal.
+
+### Archival Anti-Pattern
+
+- ❌ Manually editing `inbox.jsonl` to remove old tasks. Use the script.
+- ❌ Setting `--older-than` < 7 days. Recent terminal tasks may still be referenced.
+- ❌ Archiving `FAILED` tasks. Cancel first (explicit decision), then archive.
+- ❌ Deleting `archive/<YYYY-MM>.jsonl` files. They're the historical record.
+- ❌ Auto-archive without `--dry-run` review the first time you run on a company.
+
+---
+
+## Recap Operations — `bin/recap_manager.py` (post Update 9)
+
+Generate windowed summary from `logs.jsonl` + `inbox.jsonl` snapshot, append to `recap.jsonl`.
+
+**What a recap entry contains:**
+- Window (since → until, ISO UTC)
+- Tasks created in window
+- Tasks completed (DONE) in window
+- Tasks cancelled in window
+- Tasks failed in window
+- Active count snapshot (current)
+- Top agents by completed-task count
+- Priority distribution of DONE tasks
+
+**Windows:**
+| Window  | Days |
+|---------|------|
+| daily   | 1    |
+| weekly  | 7    |
+| monthly | 30   |
+| custom  | `--since YYYY-MM-DD` + optional `--until YYYY-MM-DD` |
+
+**Behavior:**
+- Reads `logs.jsonl` for in-window CREATE/UPDATE events.
+- Reads `inbox.jsonl` only for current active count + priority lookup.
+- Does NOT mutate inbox/logs/messages. Only appends to `recap.jsonl`.
+- One run = one recap entry per company (duplicate runs = duplicate entries; dedupe by `generated_at` if needed).
+
+**Examples:**
+```bash
+bin/recap_manager.py                                # all companies, weekly, append
+bin/recap_manager.py --window daily --quiet         # one-line per company
+bin/recap_manager.py --company crypto-consultant --window monthly
+bin/recap_manager.py --window custom --since 2026-05-01 --until 2026-05-15 --dry-run
+```
+
+**Recommended cadence:**
+- Weekly cron Sunday morning: `0 6 * * 0 cd ~/ai-holding && python3 bin/recap_manager.py --window weekly --quiet`
+- Monthly cron 1st of month: `0 6 1 * * cd ~/ai-holding && python3 bin/recap_manager.py --window monthly --quiet`
+- Daily on-demand for active sprints.
+
+**Anti-pattern:**
+- ❌ Treating recap as truth — it's an aggregate snapshot, not a database. The truth is in `logs.jsonl`.
+- ❌ Editing `recap.jsonl` manually. Append via the script or skip entirely.
+- ❌ Generating a recap before any tasks exist — output will be all zeros (still valid, just noisy).
 
 ---
 

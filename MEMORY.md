@@ -1,7 +1,7 @@
 # MEMORY.md — AI Holding Strategic Memory
 
-Versi: 2.1
-Update terakhir: 2026-05-17 (post Update 8 — Task Logger JSONL)
+Versi: 2.2
+Update terakhir: 2026-05-17 (post Update 9 — Tahap G complete)
 Owner: Fathur
 Scope: Holding-level strategic state. **Read this at session start.**
 
@@ -56,6 +56,9 @@ Inheritance: Root → Company → Agent. Konflik prinsip → atas menang. Konfli
 7. **Tool risk levels** — Low (read-only) tidak butuh approval; Medium butuh konfirmasi; High wajib konfirmasi eksplisit.
 8. **Boundary #4 amplified** untuk role rawan (BrandFlow community, Crypto onchain, Crypto risk, Crypto reporting).
 9. **Task Logger model**: single `inbox.jsonl` + status field (bukan 3-file move pattern). Append-only `logs.jsonl` untuk audit. State machine eksplisit dengan transisi yang divalidasi script.
+10. **Tier 3 SOUL coverage**: setiap role aktif di `AGENTS.md` punya Tier 3 SOUL (32 file total, post Update 9). Tidak ada lagi role yang fall-back ke Tier 2 boilerplate.
+11. **Hermes whitelist policy**: Risk=Low + read-only + no-secrets + no-mutation = auto-approve. Risk=Medium/High selalu konfirmasi. Detail di `knowledge/tools/hermes-whitelist.md`.
+12. **Archival workflow**: terminal task (DONE/CANCELLED) > 30 hari → `archive/<YYYY-MM>.jsonl` per company. `logs.jsonl` NEVER diarsipkan (audit trail). Idempotent + dry-run support.
 
 ---
 
@@ -78,14 +81,18 @@ AI Holding Workspace (~/ai-holding)
 │   brandflow/ (11 agents, 7 skills)     │
 │   crypto-consultant/ (11 agents, 7     │
 │     skills)                             │
-│ tools/ (1 active: fear_greed.py)       │
+│ tools/ (3 active: fear_greed.py,        │
+│   btc_price.py, news_sentiment.py)      │
 │ tasks/ (company-index.jsonl)            │
 │ memory/ (global.md — operational log)  │
 │ bin/ (create-company.sh,                │
 │       log_task.py, update_task.py,      │
 │       list_tasks.py, log_message.py,    │
 │       task_logger.py [lib],             │
-│       log-task.sh)                      │
+│       log-task.sh,                      │
+│       archive_tasks.py,                 │
+│       archive_messages.py,              │
+│       recap_manager.py)                 │
 │ templates/ (company scaffold)           │
 └─────────────────────────────────────────┘
 ```
@@ -101,7 +108,7 @@ AI Holding Workspace (~/ai-holding)
 | `@crypto` | Crypto Research | market research, cycle analysis, risk, reporting |
 
 Total agent: 32 (10 NexusAI + 11 BrandFlow + 11 Crypto Consultant).
-Tier 3 SOULs: 18 dari 32 (key roles); sisanya inherit dari Tier 2.
+Tier 3 SOULs: 32 dari 32 — full coverage post Update 9.
 
 ---
 
@@ -110,8 +117,8 @@ Tier 3 SOULs: 18 dari 32 (key roles); sisanya inherit dari Tier 2.
 | Folder | File / Purpose |
 |---|---|
 | `knowledge/core/` | `principles.md` — cara berpikir umum semua agent |
-| `knowledge/agent-design/` | `memory-rules.md`, `tool-use-rules.md` |
-| `knowledge/tools/` | `tool-registry.md` |
+| `knowledge/agent-design/` | `memory-rules.md`, `tool-use-rules.md`, `task-logger-rules.md` |
+| `knowledge/tools/` | `tool-registry.md`, `hermes-whitelist.md` |
 | `knowledge/software/` | `software-development-sop.md` (NexusAI domain) |
 | `knowledge/marketing/` | `marketing-sop.md` (BrandFlow domain) |
 | `knowledge/crypto/` | `crypto-research-framework.md` (Crypto domain) |
