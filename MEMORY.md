@@ -1,41 +1,147 @@
-# AI Holding Memory
+# MEMORY.md — AI Holding Strategic Memory
+
+Versi: 2.0
+Update terakhir: 2026-05-17 (post Update 6)
+Owner: Fathur
+Scope: Holding-level strategic state. **Read this at session start.**
+
+---
+
+## Peran File Ini vs `memory/global.md`
+
+Ada dua file memory di tingkat holding. Sengaja dipisah, jangan digabung:
+
+| File | Sifat | Format | Kapan Ditulis |
+|---|---|---|---|
+| **`MEMORY.md`** (this file) | Strategic / high-level | Narrative paragraphs | Saat ada keputusan arah / arsitektur / migrasi besar |
+| **`memory/global.md`** | Operational / durable log | Tagged entries `[DECISION]`, `[TASK]`, `[ARCH]`, `[TOOL]`, `[INSIGHT]` | Saat ada keputusan, task, atau perubahan operasional |
+
+**Read order**: `MEMORY.md` first (gives big picture), then `memory/global.md` if you need operational detail.
+
+---
 
 ## Current Setup
 
 Fathur is building an AI Holding system using Hermes on WSL2.
 
-Current mode:
-- Option A portable.
-- One Telegram bot.
-- One Main Assistant.
-- AI holding workspace at ~/ai-holding.
-- Designed to migrate later to Option C with Telegram topics.
+- **Mode**: Option A portable.
+- **Surface**: One Telegram bot.
+- **Brain**: One Main Assistant (Hermes-driven).
+- **Workspace**: `~/ai-holding`.
+- **Future migration**: Option C (Telegram Group Topics, one topic per company).
 
-## Important Decisions
+---
 
-1. Start with Main Assistant first.
-2. Main Assistant acts as personal assistant, router, company generator, and recap manager.
-3. Companies must be generated from templates.
-4. Each company must have isolated memory.
-5. Knowledge should be compact, not full article dumps.
-6. Use Markdown for knowledge and memory.
-7. Use JSONL for task routing.
-8. Use high-agency but risk-aware behavior.
+## SOUL Hierarchy (Active)
 
-## Knowledge References
+```
+Tier 0: SOUL.md                         — Root constitution (loyalty, execute stance, 4 boundaries)
+Tier 1: MAIN_SOUL.md                    — Main Assistant personality + decision authority
+Tier 2: companies/<co>/SOUL.md          — 3 perusahaan (NexusAI, BrandFlow, Crypto Consultant)
+Tier 3: companies/<co>/agents/<role>.md — 18 agent SOULs (key roles)
+```
 
-- knowledge/karpathy.md stores compact principles inspired by Karpathy:
-  - Prompt is program.
-  - Context is source code.
-  - Memory is persistent state.
-  - Skills are reusable modules.
-  - Evals are tests.
-  - Human remains the supervisor.
+Inheritance: Root → Company → Agent. Konflik prinsip → atas menang. Konflik spesifik → bawah menang (selama tidak melanggar root).
+
+---
+
+## Strategic Decisions (Durable)
+
+1. **Main Assistant first** — fokus stabilkan single entry point sebelum scale.
+2. **Pseudo-mention routing** — `@company` dan `@company.agent`. Slash command `/company` ditolak Hermes.
+3. **Companies isolated** — setiap perusahaan punya MEMORY.md sendiri, tidak boleh dicampur.
+4. **Knowledge compact** — Markdown, ringkas, bukan article dump.
+5. **Tasks pakai JSONL** — schema sudah didefinisi di `companies/nexusai/skills/automation/SKILL.md`.
+6. **Knowledge management dibangun manual** oleh Fathur, bukan delegated penuh ke Hermes.
+7. **Tool risk levels** — Low (read-only) tidak butuh approval; Medium butuh konfirmasi; High wajib konfirmasi eksplisit.
+8. **Boundary #4 amplified** untuk role rawan (BrandFlow community, Crypto onchain, Crypto risk, Crypto reporting).
+
+---
+
+## Architecture (Active)
+
+```
+Telegram Bot
+    ↓
+Hermes (Main Assistant)
+    ↓
+AI Holding Workspace (~/ai-holding)
+    ↓
+┌─────────────────────────────────────────┐
+│ Tier 0/1 SOUL (Root + Main)            │
+│ knowledge/ (8 files: core, agent-      │
+│   design, tools, software, marketing,  │
+│   crypto, sop, karpathy)               │
+│ companies/                              │
+│   nexusai/ (10 agents, 7 skills)       │
+│   brandflow/ (11 agents, 7 skills)     │
+│   crypto-consultant/ (11 agents, 7     │
+│     skills)                             │
+│ tools/ (1 active: fear_greed.py)       │
+│ tasks/ (company-index.jsonl)            │
+│ memory/ (global.md — operational log)  │
+│ bin/ (create-company.sh)                │
+│ templates/ (company scaffold)           │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## Companies Active
+
+| Slug | Type | Focus |
+|---|---|---|
+| `@nexusai` | IT Software | cloud, DevOps, AI agents, SaaS |
+| `@brandflow` | Marketing & Content | branding, content, social media, campaign |
+| `@crypto` | Crypto Research | market research, cycle analysis, risk, reporting |
+
+Total agent: 32 (10 NexusAI + 11 BrandFlow + 11 Crypto Consultant).
+Tier 3 SOULs: 18 dari 32 (key roles); sisanya inherit dari Tier 2.
+
+---
+
+## Knowledge Layout (Reference)
+
+| Folder | File / Purpose |
+|---|---|
+| `knowledge/core/` | `principles.md` — cara berpikir umum semua agent |
+| `knowledge/agent-design/` | `memory-rules.md`, `tool-use-rules.md` |
+| `knowledge/tools/` | `tool-registry.md` |
+| `knowledge/software/` | `software-development-sop.md` (NexusAI domain) |
+| `knowledge/marketing/` | `marketing-sop.md` (BrandFlow domain) |
+| `knowledge/crypto/` | `crypto-research-framework.md` (Crypto domain) |
+| `knowledge/sop/` | `README.md` — reusable skill library |
+| `knowledge/karpathy.md` | Karpathy-inspired principles |
+
+---
 
 ## Migration Plan
 
-Current:
-Telegram Bot → Main Assistant → command routing.
+**Current** (Option A):
+```
+Telegram Bot → Main Assistant → command routing
+```
 
-Future:
-Telegram Group Topics → topic-based company routing.
+**Future** (Option C):
+```
+Telegram Group + Topics:
+  Topic NexusAI    → companies/nexusai
+  Topic BrandFlow  → companies/brandflow
+  Topic Crypto     → companies/crypto-consultant
+```
+
+Migrate when Option A is stable and `tasks/` JSONL pipeline is operational.
+
+---
+
+## When To Update This File
+
+Write here when:
+- A **strategic** decision changes the holding's direction.
+- A **new company** is added (or removed).
+- An **architecture-level** change happens (folder restructure, migration, big tool swap).
+- A **migration milestone** completes.
+
+For everything else (day-to-day decisions, task tracking, tool registry changes, insight recording), use `memory/global.md`.
+
+If a decision is **both** strategic AND operational, write the strategic summary here and the tagged entry in `memory/global.md` — they're not mutually exclusive.

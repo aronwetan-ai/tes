@@ -1,9 +1,94 @@
 # AI Holding Project Summary
 
-Tanggal: 17 Mei 2026 — Update 6
+Tanggal: 17 Mei 2026 — Update 7
 Owner: Fathur
 Environment: WSL2 + Hermes + Telegram Bot + Online Provider API Key
 Repository: aronwetan-ai/tes
+
+---
+
+## Update 7 — Fix Memory Reference + Restructure Memory Files (17 Mei 2026)
+
+Branch: `chore/fix-memory-references`
+
+### A. Tujuan
+
+Sebelum Update 7:
+- `MAIN.md` line 5 bilang baca `MEMORY.md` (root, format Update 2 era).
+- `AGENTS.md` line 84 bilang baca `memory/global.md` (tagged log, post Update 3).
+- Dua file memory dengan **peran tidak jelas** — overlap, duplikat, atau lengkap-lengkapan tidak terdefinisi.
+- Company `MEMORY.md` masih boilerplate "None yet" tanpa link ke Tier 2 SOUL atau Update 5/6 changes.
+- `memory-rules.md` Versi 1.0 belum reflect dual-file structure.
+
+### B. Yang Dieksekusi
+
+**1. Memory split eksplisit ditetapkan** (5 file di-rewrite):
+
+| File | Sifat | Format |
+|---|---|---|
+| `MEMORY.md` (root) | Strategic / narrative — big picture | Paragraphs, struktur tabel |
+| `memory/global.md` | Operational / tagged log — day-to-day | `[DECISION]`, `[TASK]`, `[ARCH]`, `[TOOL]`, `[INSIGHT]`, `[NOTE]` |
+| `companies/<co>/MEMORY.md` × 3 | Company-scoped — both narrative + tagged | Mixed; identity narrative + tagged log |
+
+**2. `MAIN.md` rewritten** untuk eksplisit baca **kedua** memory files saat session start (dengan urutan + alasan jelas).
+
+**3. `AGENTS.md` rewritten** dengan section "Memory Reference Rules" yang explicit memisahkan strategic vs operational, plus update "Knowledge Reference Per Domain" agar konsisten dengan Tier 2/3 SOUL hierarchy + skill specialization (Update 6).
+
+**4. `memory-rules.md` Versi 2.0**:
+- Section "Struktur Memory di Holding" baru — 3 level scope (holding-level, company-level, agent-level).
+- Tabel "Kapan Pakai File Mana" — decision tree write target.
+- Section "Anti-Pattern" baru — list anti-pattern yang harus dihindari.
+
+**5. Template `templates/company/MEMORY.md` rewritten**:
+- Sekarang inherit dari Tier 2 SOUL pattern.
+- Tambah section Active Projects, Architecture Notes, Cross-Company Collaboration Log.
+- Tambah panduan format pendek vs panjang.
+- Tambah anti-pattern reminder.
+
+**6. Tiap company `MEMORY.md` rewritten** dengan reflect:
+- Tier 2 SOUL inheritance.
+- Update 5 role baru (security, ml, designer, community, onchain, macro).
+- Update 6 skill specialization.
+- Boundary #4 amplification untuk role rawan.
+- Cross-company collaboration log section.
+
+### C. Dampak Operasional
+
+Sebelum:
+- Agent baca `MEMORY.md` ATAU `memory/global.md` — tidak jelas which one when.
+- Information yang sama bisa di kedua file dengan format beda.
+- Strategic decision bisa hilang di tengah operational log.
+- Company MEMORY.md generic, tidak link ke SOUL/skill changes.
+
+Sesudah:
+- Eksplisit: `MEMORY.md` = strategic narrative; `memory/global.md` = operational tagged log. Both read on session start.
+- Format berbeda mencegah duplikasi: paragraph for narrative, tags for operational.
+- Strategic decisions punya rumah jelas (root MEMORY.md), operational log punya rumah jelas (global.md), company-scoped punya rumah jelas (per-company MEMORY.md).
+- Setiap company MEMORY.md sekarang menjadi snapshot active state per perusahaan, bukan boilerplate.
+
+### D. Total File Changes
+
+```
+Modified: MAIN.md
+Modified: AGENTS.md
+Modified: MEMORY.md (root) — full rewrite, narrative format
+Modified: memory/global.md — full rewrite, operational tagged log format
+Modified: knowledge/agent-design/memory-rules.md — Versi 2.0
+Modified: templates/company/MEMORY.md — Tier 2 inheritance pattern
+Modified: companies/nexusai/MEMORY.md
+Modified: companies/brandflow/MEMORY.md
+Modified: companies/crypto-consultant/MEMORY.md
+Modified: summary.md — Update 7 section
+```
+
+9 file dimodifikasi, 0 file dihapus, 0 file dibuat baru.
+
+### E. Yang Belum Selesai (untuk PR berikutnya)
+
+1. **Task Logger JSONL implementation** — schema sudah didefinisi di `companies/nexusai/skills/automation/SKILL.md`, tinggal writer + filter.
+2. **Tools tambahan** — `btc_price.py`, `news_sentiment.py`.
+3. **Tier 3 untuk role sisa** — PM, QA, Writer, Frontend, SEO, Analytics, Data, Report. On-demand.
+4. **Whitelist tool read-only** di Hermes (Hermes hardening).
 
 ---
 
@@ -694,32 +779,30 @@ Knowledge:
 
 ## 7. Yang Perlu Dilakukan Dalam Waktu Dekat (Updated)
 
-### Prioritas 1 — Tier 3 untuk Role Sisanya
-Saat ini 18 dari ~30 agent punya Tier 3 SOUL. Yang belum:
+### Prioritas 1 — Task Logger JSONL Implementation (NEXT)
+Schema sudah didefinisi di `companies/nexusai/skills/automation/SKILL.md`. Tinggal:
+- Writer script (`bin/log-task.sh` atau Python).
+- Filter rule (apa yang masuk inbox.jsonl, apa yang tidak — basa-basi out).
+- Wire ke Main Assistant routing flow.
+
+### Prioritas 2 — Tools Tambahan
+- `btc_price.py` (PLANNED di registry — CoinGecko API, low risk).
+- `news_sentiment.py` (PLANNED di registry — perlu pilih source).
+
+### Prioritas 3 — Tier 3 untuk Role Sisanya
+Saat ini 18 dari ~32 agent punya Tier 3 SOUL. Yang belum:
 - NexusAI: pm, frontend, qa, writer
 - BrandFlow: pm, seo, analytics, qa, writer
 - Crypto: pm, data, qa, report, writer
 
 Tambah Tier 3 untuk role yang sering dipanggil oleh Fathur, on-demand.
 
-### Prioritas 2 — Specialize Skill Files + Cleanup
-- Hapus skill folder yang tidak relevan per perusahaan (mis. `devops/` di brandflow, `coding/` di crypto).
-- Perdalam skill yang relevan dengan referensi ke Tier 3 SOUL.
+### Prioritas 4 — Hermes Service Hardening
+- Cek `hermes-gateway.service` warning bersih, no double process.
+- Whitelist tool read-only (mis. `fear_greed.py`) supaya tidak butuh approval setiap kali.
 
-### Prioritas 3 — Fix Memory Reference + Update Root MEMORY.md
-`MAIN.md` baca `MEMORY.md` (root), `AGENTS.md` baca `memory/global.md`.
-Klarifikasi peran masing-masing dan update `MEMORY.md` root agar sinkron
-dengan keputusan terbaru (SOUL hierarchy + knowledge management + Tier 2/3 SOULs + role baru).
-
-### Prioritas 4 — Task Logger JSONL
-Schema + writer + filter untuk `companies/*/tasks/inbox.jsonl`.
-
-### Prioritas 5 — Tools Tambahan
-- `btc_price.py` (PLANNED di registry).
-- `news_sentiment.py` (PLANNED di registry).
-
-### Prioritas 6 — Hermes Service Hardening
-Cek `hermes-gateway.service` warning bersih, no double process, restart membaca config.
+### Prioritas 5 — Migration Prep (Option C)
+Mulai siapkan migrasi ke Telegram Group Topics setelah semua di atas stabil.
 
 ---
 
@@ -728,29 +811,35 @@ Cek `hermes-gateway.service` warning bersih, no double process, restart membaca 
 ### Tahap A — Stabilkan Main Assistant ✓
 Done — natural command, routing, pseudo-mention konsisten.
 
-### Tahap B — Bangun Knowledge Management ✓ (selesai Update 3)
+### Tahap B — Bangun Knowledge Management ✓ (Update 3)
 Done — folder lengkap, SOP per domain, tool registry, memory rules.
 
-### Tahap C — Buat Tier 2/3 SOULs
-Tier 2 ✓ (Update 4). Tier 3 — 18 dari ~30 agent done (Update 5). Sisanya on-demand.
+### Tahap C — Buat Tier 2/3 SOULs ✓ (Update 4 + 5)
+Tier 2 done. Tier 3 — 18 agent untuk role utama; sisanya on-demand.
 
-### Tahap D — Specialize Skills
-Belum — masih boilerplate.
+### Tahap D — Specialize Skills ✓ (Update 6)
+Done — 21 skill files specialized per company, 3 SKILLS.md index, 16 boilerplate dihapus.
 
-### Tahap E — Task Logger
-Belum.
+### Tahap E — Memory Reference Fix ✓ (Update 7)
+Done — `MEMORY.md` (strategic) vs `memory/global.md` (operational) split eksplisit.
 
-### Tahap F — Tools Tambahan
-1 dari 4 active. 3 PLANNED.
+### Tahap F — Task Logger (NEXT)
+Belum — schema sudah definisi di `skills/automation`, tinggal writer + filter.
 
-### Tahap G — Migrasi Option C (Telegram Topic)
-Nanti setelah B–F stabil.
+### Tahap G — Tools Tambahan
+1 dari 4 active. 3 PLANNED (`btc_price.py`, `news_sentiment.py`, lainnya).
+
+### Tahap H — Hermes Hardening
+Service warnings cleanup + whitelist read-only tools.
+
+### Tahap I — Migrasi Option C (Telegram Topic)
+Nanti setelah F–H stabil.
 
 ---
 
 ## 9. Status Terakhir
 
-Status project: **Usable Prototype with Specialized Skills Layer**
+Status project: **Usable Prototype with Specialized Layers + Coherent Memory**
 
 Yang sudah siap:
 ```
@@ -758,43 +847,44 @@ Yang sudah siap:
 - Main Assistant
 - AI Holding workspace
 - Company generator (sudah handle SLUG substitution)
-- 3 perusahaan awal
-- Direct agent routing
+- 3 perusahaan awal (32 total agents: 10 + 11 + 11)
+- Direct agent routing (@company.agent)
 - Crypto Fear & Greed tool
 - SOUL Tier 0 + Tier 1
-- SOUL Tier 2 (semua 3 perusahaan, post Update 4)
-- SOUL Tier 3 (18 agent untuk role utama, post Update 5)
+- SOUL Tier 2 (semua 3 perusahaan, Update 4)
+- SOUL Tier 3 (18 agent role utama, Update 5)
 - 6 role baru: security, ml, designer, community, onchain, macro
-- Skill files specialized per company (21 file, post Update 6)
-- 3 SKILLS.md index files per company (post Update 6)
+- Skill files specialized per company (21 file, Update 6)
+- 3 SKILLS.md index files (Update 6)
 - Knowledge management lengkap (8 file aktif)
-- Template Tier-2 + skill template ready
+- Memory reference rapi: MEMORY.md (strategic) vs memory/global.md (operational), Update 7
+- Per-company MEMORY.md ter-update dengan Tier 2 inheritance
+- memory-rules.md Versi 2.0 dengan dual-file structure eksplisit
+- Template Tier-2 + skill template + memory template ready
 - Repo bersih (no .bak, no Zone.Identifier)
 ```
 
 Yang belum:
 ```
 - Tier 3 untuk role sisa (PM, QA, Writer, Frontend, SEO, Analytics, Data, Report)
-- Task logger JSONL writer
-- Root MEMORY.md update agar sinkron dengan keputusan terbaru
+- Task logger JSONL writer (schema ready, implementation pending)
 - btc_price.py
 - news_sentiment.py
-- Whitelist tool read-only
-- Memory reference inkonsistensi (MAIN.md vs AGENTS.md)
+- Whitelist tool read-only (Hermes hardening)
 ```
 
 ---
 
 ## 10. Next Immediate Action
 
-Setelah Update 6 (Specialize Skills) selesai, langkah berikutnya:
+Setelah Update 7 (Memory Reference Fix) selesai, langkah berikutnya:
 
 ```
-1. Fix memory reference + update root MEMORY.md agar sinkron.
-2. Task logger JSONL implementation (skill automation NexusAI sudah definisi schema).
-3. Tools tambahan: btc_price.py, news_sentiment.py.
-4. Tier 3 untuk role sisa (on-demand saat Fathur sering pakai).
-5. Whitelist tool read-only di Hermes.
+1. Task logger JSONL implementation — schema ready di skills/automation,
+   tinggal writer + filter.
+2. Tools tambahan: btc_price.py, news_sentiment.py.
+3. Tier 3 untuk role sisa (on-demand).
+4. Hermes hardening — whitelist read-only tools.
 ```
 
 ---
@@ -804,8 +894,8 @@ Setelah Update 6 (Specialize Skills) selesai, langkah berikutnya:
 Gunakan prompt ini ke Hermes / Kiro jika ingin melanjutkan:
 
 ```text
-Baca summary.md (Update 6 section terbaru) lalu lanjutkan dari "Next Immediate Action".
-Mulai dari fix memory reference + update root MEMORY.md.
+Baca summary.md (Update 7 section terbaru) lalu lanjutkan dari "Next Immediate Action".
+Mulai dari Task Logger JSONL implementation.
 Pelan-pelan, satu tahap per response, tunggu konfirmasi sebelum lanjut.
 ```
 
@@ -815,10 +905,11 @@ Pelan-pelan, satu tahap per response, tunggu konfirmasi sebelum lanjut.
 
 | Branch                                          | Status   | Isi |
 |-------------------------------------------------|----------|-----|
-| `main`                                          | base     | Update 3 + 4 + 5 sudah merged |
+| `main`                                          | base     | Update 3 + 4 + 5 + 6 sudah merged |
 | `chore/quickwins-cleanup-and-knowledge-fix`     | merged   | Update 3 — cleanup + knowledge + template (PR #1) |
 | `feat/tier2-company-souls`                      | merged   | Update 4 — Tier 2 SOULs untuk 3 perusahaan (PR #2) |
 | `feat/tier3-agent-souls`                        | merged   | Update 5 — Tier 3 SOULs (18) + 6 role baru (PR #3) |
-| `feat/specialize-skills`                        | active   | Update 6 — Specialize 21 skill files + 3 index |
+| `feat/specialize-skills`                        | merged   | Update 6 — Specialize skill files (PR #4) |
+| `chore/fix-memory-references`                   | active   | Update 7 — Memory reference fix + restructure |
 
-Setelah branch ini di-merge, lanjut ke memory reference fix atau task logger.
+Setelah branch ini di-merge, lanjut ke task logger atau tools tambahan.
