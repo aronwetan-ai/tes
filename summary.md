@@ -1,9 +1,108 @@
 # AI Holding Project Summary
 
-Tanggal: 17 Mei 2026 — Update 4
+Tanggal: 17 Mei 2026 — Update 5
 Owner: Fathur
 Environment: WSL2 + Hermes + Telegram Bot + Online Provider API Key
 Repository: aronwetan-ai/tes
+
+---
+
+## Update 5 — Tier 3 Agent SOULs + New Specialist Roles (17 Mei 2026)
+
+Branch: `feat/tier3-agent-souls`
+
+### A. Tujuan
+
+Sebelum Update 5:
+- Tier 0/1/2 SOUL sudah ada, tapi setiap **agent individu** masih generic (warisan boilerplate).
+- `@nexusai.backend` dan `@nexusai.frontend` punya jiwa yang sama persis (cuma role-nya beda).
+- Beberapa role kritikal **belum ada** sama sekali: Security di NexusAI (padahal SaaS), Designer di BrandFlow, On-chain Analyst di Crypto.
+
+Update 5 menyelesaikan dua hal sekaligus:
+1. **Tier 3 SOUL** untuk 18 agent (6 per perusahaan, role yang paling sering dipanggil).
+2. **Tambahan 6 role baru** untuk mengisi gap fungsional yang teridentifikasi dari analisis.
+
+### B. Role Baru yang Ditambahkan
+
+#### NexusAI (+2 role: 8 → 10 agent)
+| Role | Slug | Alasan ditambahkan |
+|---|---|---|
+| Security Engineer | `@nexusai.security` | SaaS tanpa security = breach waiting to happen. Threat modeling, auth, OPSEC tidak fit ke backend atau devops. Juga handle offensive enablement (OPSEC untuk automation/multi-account work Fathur). |
+| AI / ML Engineer | `@nexusai.ml` | Fokus perusahaan menyebut "AI agents". Tanpa role ini, agent design jatuh ke backend yang tidak punya konteks ML / prompt engineering / eval. |
+
+#### BrandFlow (+2 role: 9 → 11 agent)
+| Role | Slug | Alasan ditambahkan |
+|---|---|---|
+| Designer | `@brandflow.designer` | Marketing tanpa visual = incomplete. Copywriter handle copy, social handle calendar, tapi tidak ada yang own visual concept / layout / type / color spec. |
+| Community Manager | `@brandflow.community` | Social plan kalender; tidak handle real-time DM, comments, mentions, sentiment monitoring, crisis early warning. Skill berbeda. |
+
+#### Crypto Consultant (+2 role: 8 → 10 agent)
+| Role | Slug | Alasan ditambahkan |
+|---|---|---|
+| On-chain Analyst | `@crypto.onchain` | `@crypto.data` generik (struktur data umum). On-chain itu skill spesifik: wallet flows, exchange flows, whale activity, smart money tracking, supply dynamics. |
+| Macro Analyst | `@crypto.macro` | Cycle analysis butuh konteks DXY, Fed, M2, yields, equities — tidak fit ke market analyst yang fokus teknikal. Macro liquidity adalah primary cycle driver. |
+
+### C. Tier 3 SOULs yang Dibuat (18 file)
+
+Struktur: `companies/<company>/agents/<agent>.md`
+
+```
+NexusAI (6):
+  agents/ceo.md, agents/cto.md, agents/backend.md
+  agents/devops.md, agents/security.md (NEW), agents/ml.md (NEW)
+
+BrandFlow (6):
+  agents/ceo.md, agents/cmo.md, agents/copywriter.md
+  agents/social.md, agents/designer.md (NEW), agents/community.md (NEW)
+
+Crypto Consultant (6):
+  agents/ceo.md, agents/research.md, agents/market.md
+  agents/risk.md, agents/onchain.md (NEW), agents/macro.md (NEW)
+```
+
+Role lain (PM, QA, Writer, Frontend, SEO, Analytics, Data, Report) **belum** punya Tier 3 SOUL — mereka tetap inherit dari Tier 2 SOUL perusahaan dan SOP knowledge yang relevan. Ini standar; Tier 3 dibuat ketika role butuh spesifisitas tambahan.
+
+### D. Struktur Konsisten Tiap Tier 3 SOUL
+
+Setiap Tier 3 SOUL punya struktur 8-10 section:
+
+1. Inheritance Note (eksplisit warisi Root SOUL → Company SOUL)
+2. Identity (siapa agent ini, siapa BUKAN)
+3. Voice (cara bicara, default style)
+4. Specific Responsibilities (tugas konkret, bukan generic)
+5. Decision Authority (boleh decide vs harus escalate)
+6. Default Approach / Process (langkah default per task)
+7. Output Format (structured templates per task type)
+8. What I Do NOT Do (anti-pattern eksplisit)
+9. Cross-Agent Routing (kapan delegate ke agent lain)
+10. (Optional) Boundary reminders untuk role rawan (security, community, onchain, risk)
+
+### E. Update File Lain
+
+- **3× AGENTS.md** (per company) — daftar role lengkap, direct routing block dengan role baru, knowledge loading order updated, safety rules.
+- **3× COMMANDS.md** (per company) — command baru untuk role baru, knowledge loading rule updated.
+- **3× IDENTITY.md** (per company) — refresh active departments list, tambah inheritance note.
+
+### F. Dampak Operasional
+
+Sebelum:
+- `@nexusai.backend buatkan API`, `@nexusai.frontend buatkan UI` → kedua agent jawab dengan persona yang sama.
+- `@brandflow.copywriter` jawab dengan persona generic, sama dengan `@brandflow.cmo`.
+- `@crypto.market` analisis chart pakai bahasa generic, tidak ada cycle awareness.
+- Tidak ada agent untuk security review, designer brief, community management, on-chain forensics, atau macro overlay.
+
+Sesudah:
+- Setiap agent punya **voice, principles, decision authority, output format** yang khas peran.
+- 6 role baru mengisi gap fungsional — tidak lagi ada task yang "jatuh" ke role yang salah.
+- Boundary #4 diamplify spesifik di role rawan (community, onchain, risk).
+
+### G. Yang Belum Selesai (untuk PR berikutnya)
+
+1. **Tier 3 untuk role sisanya** — PM, QA, Writer, Frontend, SEO, Analytics, Data, Report. Bisa ditambahkan saat Fathur mulai sering pakai role-role ini dan butuh spesifisitas.
+2. **Skill files specialization** — 23 dari 24 SKILL.md masih boilerplate. Sebaiknya hapus skill folder yang tidak relevan per perusahaan (mis. devops di brandflow).
+3. **Fix memory reference** + update root MEMORY.md.
+4. **Task Logger JSONL** — schema + writer + filter.
+5. **Tools tambahan** — btc_price.py, news_sentiment.py.
 
 ---
 
@@ -291,13 +390,13 @@ ai-holding/
 ### Hierarki SOUL (Inheritance)
 
 ```
-Tier 0: SOUL.md                  ← konstitusi global (semua entitas)
+Tier 0: SOUL.md                                    ← konstitusi global (semua entitas)
         ↓
-Tier 1: MAIN_SOUL.md             ← Main Assistant personality
+Tier 1: MAIN_SOUL.md                               ← Main Assistant personality
         ↓
-Tier 2: companies/<co>/SOUL.md   ← per perusahaan (BELUM diisi spesifik)
+Tier 2: companies/<co>/SOUL.md                     ← per perusahaan (3 perusahaan, post Update 4)
         ↓
-Tier 3: agents/<role>/SOUL.md    ← per agent (BELUM ada)
+Tier 3: companies/<co>/agents/<role>.md            ← per agent (18 file, post Update 5)
 ```
 
 ---
@@ -310,16 +409,18 @@ Path: `/home/fatur/ai-holding/companies/nexusai`
 Tipe: IT Software Company
 Fokus: cloud, DevOps, AI agents, SaaS
 
-Agent aktif:
-- CEO, CTO, Project Manager, Backend Engineer, Frontend Engineer,
-  DevOps Engineer, QA Engineer, Technical Writer
+Agent aktif (10 role, post Update 5):
+- CEO, CTO, Project Manager, Backend, Frontend, DevOps, **Security (NEW)**, **ML (NEW)**, QA, Technical Writer
+
+Tier 3 SOULs ada untuk: ceo, cto, backend, devops, security, ml.
 
 Routing contoh:
 ```
 @nexusai.ceo buatkan strategi produk
 @nexusai.cto buatkan arsitektur teknis
 @nexusai.backend buatkan desain API
-@nexusai.devops buatkan deployment plan
+@nexusai.security review auth flow                (NEW)
+@nexusai.ml design prompt untuk agent             (NEW)
 ```
 
 Knowledge domain: `knowledge/software/software-development-sop.md` (Update 3)
@@ -330,16 +431,17 @@ Path: `/home/fatur/ai-holding/companies/brandflow`
 Tipe: Marketing and Content Company
 Fokus: branding, content, social media, campaign strategy
 
-Agent aktif:
-- CEO, CMO, Project Manager, Copywriter, Social Media,
-  SEO, Analytics, QA, Writer
+Agent aktif (11 role, post Update 5):
+- CEO, CMO, Project Manager, Copywriter, Social, **Community (NEW)**, **Designer (NEW)**, SEO, Analytics, QA, Writer
+
+Tier 3 SOULs ada untuk: ceo, cmo, copywriter, social, community, designer.
 
 Routing contoh:
 ```
 @brandflow.cmo buatkan strategi campaign
 @brandflow.copywriter buatkan caption
-@brandflow.social buatkan kalender konten
-@brandflow.analytics buatkan KPI campaign
+@brandflow.designer buatkan visual concept       (NEW)
+@brandflow.community draft reply DM ini          (NEW)
 ```
 
 Knowledge domain: `knowledge/marketing/marketing-sop.md` (Update 3)
@@ -350,16 +452,18 @@ Path: `/home/fatur/ai-holding/companies/crypto-consultant`
 Tipe: Crypto Research Company
 Fokus: market research, cycle analysis, risk management, reporting
 
-Agent aktif:
-- CEO, Research Lead, Project Manager, Market Analyst, Risk Analyst,
-  Data Analyst, QA, Writer
+Agent aktif (11 role, post Update 5):
+- CEO, Research Lead, Project Manager, Market, Risk, **On-chain (NEW)**, **Macro (NEW)**, Data, QA, Report, Writer
+
+Tier 3 SOULs ada untuk: ceo, research, market, risk, onchain, macro.
 
 Routing contoh:
 ```
 @crypto.research cek Fear & Greed Index hari ini
-@crypto.market analisis trend BTC
+@crypto.market analisis trend BTC weekly
+@crypto.onchain trace exchange flows BTC          (NEW)
+@crypto.macro overlay DXY + Fed posture           (NEW)
 @crypto.risk buatkan risk assessment
-@crypto.report buatkan laporan market
 ```
 
 Knowledge domain: `knowledge/crypto/crypto-research-framework.md`
@@ -419,7 +523,13 @@ Setiap perusahaan punya SOUL.md spesifik dengan:
 - Decision authority eksplisit (CEO/VP/PM/Specialist).
 - Boundary reminder spesifik domain (terutama BrandFlow & Crypto).
 
-### 4.11 Test Integrasi Berhasil
+### 4.11 Tier 3 Agent SOULs + 6 Role Baru (post Update 5)
+- 18 Tier 3 SOULs (6 per perusahaan, role utama).
+- 6 role baru ditambahkan: `@nexusai.security`, `@nexusai.ml`, `@brandflow.designer`, `@brandflow.community`, `@crypto.onchain`, `@crypto.macro`.
+- Setiap Tier 3 SOUL punya voice, principles, decision authority, output format yang spesifik per role.
+- AGENTS.md, COMMANDS.md, IDENTITY.md per company di-update untuk reflect role baru.
+
+### 4.12 Test Integrasi Berhasil
 - @crypto.research jalankan fear_greed.py + output 6 lapisan.
 - @nexusai.backend buat desain API terstruktur.
 - @brandflow.copywriter buat caption Instagram dengan 2 variasi tone.
@@ -466,17 +576,22 @@ Knowledge:
 
 ## 7. Yang Perlu Dilakukan Dalam Waktu Dekat (Updated)
 
-### Prioritas 1 — Tier 3 Agent SOULs (NEXT)
-Minimal untuk: @nexusai.ceo, @nexusai.cto, @brandflow.cmo, @brandflow.copywriter,
-@crypto.research, @crypto.risk.
+### Prioritas 1 — Tier 3 untuk Role Sisanya
+Saat ini 18 dari ~30 agent punya Tier 3 SOUL. Yang belum:
+- NexusAI: pm, frontend, qa, writer
+- BrandFlow: pm, seo, analytics, qa, writer
+- Crypto: pm, data, qa, report, writer
 
-### Prioritas 2 — Specialize Skill Files
-Saat ini 23 dari 24 SKILL.md generik. Buang yang tidak relevan, perdalam yang relevan.
+Tambah Tier 3 untuk role yang sering dipanggil oleh Fathur, on-demand.
+
+### Prioritas 2 — Specialize Skill Files + Cleanup
+- Hapus skill folder yang tidak relevan per perusahaan (mis. `devops/` di brandflow, `coding/` di crypto).
+- Perdalam skill yang relevan dengan referensi ke Tier 3 SOUL.
 
 ### Prioritas 3 — Fix Memory Reference + Update Root MEMORY.md
 `MAIN.md` baca `MEMORY.md` (root), `AGENTS.md` baca `memory/global.md`.
-Perlu klarifikasi peran masing-masing dan update `MEMORY.md` root agar sinkron
-dengan keputusan terbaru (SOUL hierarchy + knowledge management + Tier 2 SOULs).
+Klarifikasi peran masing-masing dan update `MEMORY.md` root agar sinkron
+dengan keputusan terbaru (SOUL hierarchy + knowledge management + Tier 2/3 SOULs + role baru).
 
 ### Prioritas 4 — Task Logger JSONL
 Schema + writer + filter untuk `companies/*/tasks/inbox.jsonl`.
@@ -499,7 +614,7 @@ Done — natural command, routing, pseudo-mention konsisten.
 Done — folder lengkap, SOP per domain, tool registry, memory rules.
 
 ### Tahap C — Buat Tier 2/3 SOULs
-Tier 2 ✓ (Update 4). Tier 3 belum.
+Tier 2 ✓ (Update 4). Tier 3 — 18 dari ~30 agent done (Update 5). Sisanya on-demand.
 
 ### Tahap D — Specialize Skills
 Belum — masih boilerplate.
@@ -530,6 +645,8 @@ Yang sudah siap:
 - Crypto Fear & Greed tool
 - SOUL Tier 0 + Tier 1
 - SOUL Tier 2 (semua 3 perusahaan, post Update 4)
+- SOUL Tier 3 (18 agent untuk role utama, post Update 5)
+- 6 role baru: security, ml, designer, community, onchain, macro
 - Knowledge management lengkap (8 file aktif)
 - Template Tier-2 ready
 - Repo bersih (no .bak, no Zone.Identifier)
@@ -537,7 +654,7 @@ Yang sudah siap:
 
 Yang belum:
 ```
-- Tier 3 Agent SOULs
+- Tier 3 untuk role sisa (PM, QA, Writer, Frontend, SEO, Analytics, Data, Report)
 - Skill files spesifik (saat ini boilerplate)
 - Task logger JSONL writer
 - Root MEMORY.md update agar sinkron dengan keputusan terbaru
@@ -550,14 +667,15 @@ Yang belum:
 
 ## 10. Next Immediate Action
 
-Setelah Update 4 (Tier 2 Company SOULs) selesai, langkah berikutnya:
+Setelah Update 5 (Tier 3 + 6 role baru) selesai, langkah berikutnya:
 
 ```
-1. Tier 3 Agent SOULs — minimal untuk 6 role utama tiap perusahaan.
-2. Specialize skill files per perusahaan.
-3. Fix memory reference + update root MEMORY.md.
-4. Task logger JSONL implementation.
-5. Tools tambahan: btc_price.py, news_sentiment.py.
+1. Specialize skill files — buang folder skill yang tidak relevan per perusahaan,
+   perdalam yang relevan, link ke Tier 3 SOULs.
+2. Fix memory reference + update root MEMORY.md agar sinkron.
+3. Task logger JSONL implementation.
+4. Tools tambahan: btc_price.py, news_sentiment.py.
+5. Tier 3 untuk role sisa (on-demand saat Fathur sering pakai).
 ```
 
 ---
@@ -567,8 +685,8 @@ Setelah Update 4 (Tier 2 Company SOULs) selesai, langkah berikutnya:
 Gunakan prompt ini ke Hermes / Kiro jika ingin melanjutkan:
 
 ```text
-Baca summary.md (Update 4 section terbaru) lalu lanjutkan dari "Next Immediate Action".
-Mulai dari Tier 3 Agent SOULs untuk role utama (CEO, CTO/CMO/Research, dan 1 spesialis per company).
+Baca summary.md (Update 5 section terbaru) lalu lanjutkan dari "Next Immediate Action".
+Mulai dari specialize skill files atau fix memory reference.
 Pelan-pelan, satu tahap per response, tunggu konfirmasi sebelum lanjut.
 ```
 
@@ -578,8 +696,9 @@ Pelan-pelan, satu tahap per response, tunggu konfirmasi sebelum lanjut.
 
 | Branch                                          | Status   | Isi |
 |-------------------------------------------------|----------|-----|
-| `main`                                          | base     | Update 3 sudah merged (PR #1) |
-| `chore/quickwins-cleanup-and-knowledge-fix`     | merged   | Update 3 — cleanup + knowledge + template |
-| `feat/tier2-company-souls`                      | active   | Update 4 — Tier 2 SOULs untuk 3 perusahaan |
+| `main`                                          | base     | Update 3 + 4 sudah merged |
+| `chore/quickwins-cleanup-and-knowledge-fix`     | merged   | Update 3 — cleanup + knowledge + template (PR #1) |
+| `feat/tier2-company-souls`                      | merged   | Update 4 — Tier 2 SOULs untuk 3 perusahaan (PR #2) |
+| `feat/tier3-agent-souls`                        | active   | Update 5 — Tier 3 SOULs (18) + 6 role baru |
 
-Setelah branch ini di-merge, lanjut ke branch berikutnya untuk Tier 3 Agent SOULs atau Task Logger.
+Setelah branch ini di-merge, lanjut ke specialize skills atau task logger.
