@@ -1,7 +1,7 @@
 # Tool Registry — AI Holding
 
-Versi: 1.2
-Update terakhir: 2026-05-17 (post Update 9 — Tahap G complete)
+Versi: 1.3
+Update terakhir: 2026-05-17 (post Update 10 — NexusAI deepening)
 Dikelola oleh: Main Assistant
 
 ---
@@ -17,6 +17,7 @@ Urutan pengecekan:
 4. JANGAN langsung bilang tidak bisa sebelum cek registry.
 
 Whitelist policy: lihat `knowledge/tools/hermes-whitelist.md` untuk aturan auto-approval Hermes.
+Declined-tools scope: lihat `knowledge/scope/declined-tools.md` untuk hal yang tidak dibangun.
 
 ---
 
@@ -36,6 +37,16 @@ Whitelist policy: lihat `knowledge/tools/hermes-whitelist.md` untuk aturan auto-
 | 010 | archive_tasks.py     | Medium  | Active   | Dry-run only| User confirm    |
 | 011 | archive_messages.py  | Medium  | Active   | Dry-run only| User confirm    |
 | 012 | recap_manager.py     | Medium  | Active   | Dry-run only| User confirm    |
+| 013 | json_schema_check.py | Low     | Active   | Yes         | Auto            |
+| 014 | markdown_lint.py     | Low     | Active   | Yes         | Auto            |
+| 015 | dep_audit.py         | Low     | Active   | Yes         | Auto            |
+| 016 | api_health.py        | Low     | Active   | Yes         | Auto            |
+| 017 | prompt_eval.py       | Low     | Active   | Yes         | Auto            |
+| 018 | cred_vault.py        | Medium  | Active   | Read-only sub-cmds | User confirm |
+| 019 | secret_scanner.py    | Low     | Active   | Yes         | Auto            |
+| 020 | exif_extract.py      | Low     | Active   | Yes         | Auto            |
+| 021 | reverse_image_lookup.py | Low  | Active   | Yes (no `--open`) | Auto      |
+| 022 | osint_lookup.py      | Low     | Active   | Yes         | Auto            |
 
 ---
 
@@ -247,6 +258,182 @@ Windows:
   weekly   last 7d (default)
   monthly  last 30d
   custom   --since + --until
+
+---
+
+### TOOL-013 — JSON Schema Validator
+Name        : json_schema_check.py
+Path        : /home/fatur/ai-holding/tools/json_schema_check.py
+Command     : python3 /home/fatur/ai-holding/tools/json_schema_check.py --schema schema.json --data data.json [--recursive] [--stdin] [--quiet]
+Purpose     : Validate JSON files against a JSON Schema. Stdlib fallback when `jsonschema` lib unavailable.
+Output      : Per-file PASS/FAIL with error detail; summary count.
+Used by     : `@nexusai.qa`, `@nexusai.backend`, `@nexusai.ml` (validate agent JSON output), task logger contract checks.
+Risk        : Low — read-only local FS, no network.
+Status      : Active (post Update 10)
+Whitelisted : Yes
+Approval    : Auto
+
+Exit code: 0 = all valid; 1 = at least one invalid; 2 = arg/IO error.
+
+---
+
+### TOOL-014 — Markdown Linter
+Name        : markdown_lint.py
+Path        : /home/fatur/ai-holding/tools/markdown_lint.py
+Command     : python3 /home/fatur/ai-holding/tools/markdown_lint.py [paths] [--max-line N] [--root .] [--fail-on info|warning|error] [--quiet]
+Purpose     : Lint Markdown for doc quality (heading hierarchy, broken internal links, trailing whitespace, tabs, unclosed code fences, blank-line runs, line length).
+Output      : Per-issue line `path:line [level] msg`; summary count.
+Used by     : `@nexusai.writer`, `@nexusai.qa`, doc reviewers, CI.
+Risk        : Low — read-only local FS, no network.
+Status      : Active (post Update 10)
+Whitelisted : Yes
+Approval    : Auto
+
+---
+
+### TOOL-015 — Dependency Audit
+Name        : dep_audit.py
+Path        : /home/fatur/ai-holding/tools/dep_audit.py
+Command     : python3 /home/fatur/ai-holding/tools/dep_audit.py [--workdir DIR] [--only python|node] [--json]
+Purpose     : Wrap pip / npm dep auditors. Surface outdated + vulnerable. Read-only.
+Output      : Human report (default) or JSON; lists outdated packages + vulnerability counts.
+Used by     : `@nexusai.devops`, `@nexusai.security`, weekly cron, pre-release.
+Risk        : Low — auditors only inspect lockfiles, never modify.
+Status      : Active (post Update 10)
+Whitelisted : Yes
+Approval    : Auto
+
+Notes:
+- Falls back gracefully if `pip-audit` not installed.
+- Skips `node` audit if no `package.json` in workdir.
+- Exit 0 = no issues, 1 = issues found, 2 = arg error.
+
+---
+
+### TOOL-016 — API Health Check
+Name        : api_health.py
+Path        : /home/fatur/ai-holding/tools/api_health.py
+Command     : python3 /home/fatur/ai-holding/tools/api_health.py URL [--expect-status N] [--expect-substring S] [--max-latency-ms N] [--header 'Name: Value'] [--runs N] [--timeout S] [--json]
+Purpose     : Single-endpoint GET probe. Reports status, p50/p95/max latency over N runs.
+Output      : Human report or JSON; nonzero exit if expectations fail.
+Used by     : `@nexusai.devops`, `@nexusai.qa`, post-deploy smoke test.
+Risk        : Low — single GET to user-supplied URL, no write.
+Status      : Active (post Update 10)
+Whitelisted : Yes
+Approval    : Auto
+Depends on  : Python 3 stdlib only (urllib).
+
+---
+
+### TOOL-017 — Prompt Eval Runner
+Name        : prompt_eval.py
+Path        : /home/fatur/ai-holding/tools/prompt_eval.py
+Command     : python3 /home/fatur/ai-holding/tools/prompt_eval.py --cases cases.yaml --outputs outputs.json [--baseline baseline.json] [--regression-threshold 0.02] [--json]
+Purpose     : Run deterministic graders against AI agent outputs to compute eval pass rate. Detects regression vs baseline.
+Output      : Per-category pass rate, regression flag, list of failing cases.
+Used by     : `@nexusai.ml`, `@nexusai.qa`, CI on prompt-change PR.
+Risk        : Low — local FS only, NO LLM calls (you produce outputs separately).
+Status      : Active (post Update 10)
+Whitelisted : Yes
+Approval    : Auto
+
+10 grader types: regex, regex_must_not, must_contain, must_not_contain, must_not_contain_any, length_max, length_min, json_valid, json_has_keys, exact.
+
+Reference: `companies/nexusai/skills/ml-agent/prompt-eval.md`, `knowledge/ml/eval-methodology.md`.
+
+---
+
+### TOOL-018 — Credential Vault
+Name        : cred_vault.py
+Path        : /home/fatur/ai-holding/tools/cred_vault.py
+Command     : python3 /home/fatur/ai-holding/tools/cred_vault.py {keygen|init|set|get|list|delete|rotate|audit|export} ...
+Purpose     : Encrypted per-client credential vault (AES-256-GCM via `cryptography` lib). Audit-logs every read.
+Output      : Per subcommand; `get` prints plaintext value to stdout for piping.
+Used by     : `@nexusai.security`, all automation that touches client credentials.
+Risk        : Medium — writes encrypted vault file + audit log; never logs plaintext.
+Status      : Active (post Update 10)
+Whitelisted : Read-only sub-commands (`list`, `audit`, `keygen`) yes; mutating sub-commands (`init`, `set`, `delete`, `rotate`, `export`, `get`) require user confirm.
+Approval    : Mixed per sub-command
+Depends on  : `cryptography` package; `AI_VAULT_KEY` env var (or `AI_VAULT_KEY_FILE`).
+
+Subcommand risk profile:
+- `keygen`        — Low (prints, never persists). Whitelistable.
+- `list` / `audit` — Low (read-only). Whitelistable.
+- `init` / `set` / `delete` / `rotate` — Medium (writes vault). Confirm.
+- `get` — Medium (reads + appends audit; secret printed to stdout). Confirm.
+- `export` — Medium (encrypted blob, but exposes scope). Confirm.
+
+Reference: `knowledge/security/opsec-multi-account.md`.
+
+---
+
+### TOOL-019 — Secret Scanner
+Name        : secret_scanner.py
+Path        : /home/fatur/ai-holding/tools/secret_scanner.py
+Command     : python3 /home/fatur/ai-holding/tools/secret_scanner.py [paths] [--staged] [--since rev..rev] [--json] [--quiet]
+Purpose     : Scan files for credential / secret leak patterns (AWS, GCP, GitHub, Slack, Stripe, Anthropic, OpenAI, Meta, JWT, private keys, generic high-entropy).
+Output      : Per-finding line `path:line [pattern] desc: snippet`; summary count.
+Used by     : `@nexusai.security`, pre-commit hook, CI on every PR.
+Risk        : Low — read-only local FS / git inspection, no network.
+Status      : Active (post Update 10)
+Whitelisted : Yes
+Approval    : Auto
+
+Annotations:
+- Add `# secret-scanner: ignore` or `# pragma: allowlist secret` on a line to skip.
+- Exit 0 = no findings, 1 = findings present (CI block).
+
+Reference: `knowledge/security/opsec-multi-account.md`, `knowledge/security/owasp-top10.md` (A02).
+
+---
+
+### TOOL-020 — EXIF Extractor
+Name        : exif_extract.py
+Path        : /home/fatur/ai-holding/tools/exif_extract.py
+Command     : python3 /home/fatur/ai-holding/tools/exif_extract.py FILE [FILE...] [--json]
+Purpose     : Extract EXIF metadata from image files. GPS DMS→decimal conversion; Pillow preferred, stdlib JPEG fallback.
+Output      : Human or JSON; common tags + GPS lat/lon + size + format.
+Used by     : `@nexusai.security`, OSINT investigations, agency due-diligence on uploaded images.
+Risk        : Low — read-only local FS, no network.
+Status      : Active (post Update 10)
+Whitelisted : Yes
+Approval    : Auto
+Depends on  : Pillow (preferred) or stdlib only (limited to JPEG basic tags).
+
+Reference: `knowledge/scope/declined-tools.md` (substitute for face recognition).
+
+---
+
+### TOOL-021 — Reverse Image Lookup URL Builder
+Name        : reverse_image_lookup.py
+Path        : /home/fatur/ai-holding/tools/reverse_image_lookup.py
+Command     : python3 /home/fatur/ai-holding/tools/reverse_image_lookup.py {--url URL | --file PATH} [--engines list] [--open] [--json]
+Purpose     : Build reverse-image-search URLs for Google Lens / Yandex / TinEye / Bing / SauceNAO. For local files: prints upload pages + sha256/sha1/md5 fingerprint.
+Output      : Per-engine URL; with `--open`, opens browser tab.
+Used by     : `@nexusai.security`, OSINT investigations.
+Risk        : Low — generates URLs and optionally opens browser; no scraping.
+Status      : Active (post Update 10)
+Whitelisted : Yes when no `--open` flag (plain URL generation = read-only). With `--open` requires confirm (browser action is user-visible side effect).
+Approval    : Auto for URL generation; confirm if `--open`.
+
+Reference: `knowledge/scope/declined-tools.md` (substitute for face recognition).
+
+---
+
+### TOOL-022 — OSINT Identifier Lookup
+Name        : osint_lookup.py
+Path        : /home/fatur/ai-holding/tools/osint_lookup.py
+Command     : python3 /home/fatur/ai-holding/tools/osint_lookup.py {--phone N | --email E | --username U} [--probe] [--probe-timeout S] [--json]
+Purpose     : Build OSINT lookup URLs for phone / email / username; for username, optionally HEAD-probe ~30 platforms (Sherlock-style).
+Output      : Per-source URL; with `--probe`, list of platforms where username exists.
+Used by     : `@nexusai.security`, agency due-diligence, investigations.
+Risk        : Low — URL generation + HEAD probes against public profile URLs.
+Status      : Active (post Update 10)
+Whitelisted : Yes
+Approval    : Auto
+Depends on  : Python 3 stdlib only (urllib, ThreadPoolExecutor).
+
+Reference: `knowledge/scope/declined-tools.md` (substitute for face recognition).
 
 ---
 

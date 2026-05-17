@@ -1,7 +1,7 @@
 # memory/global.md — AI Holding Operational Memory
 
-Versi: 2.2
-Update terakhir: 2026-05-17 (post Update 9 — Tahap G complete)
+Versi: 2.3
+Update terakhir: 2026-05-17 (post Update 10 — NexusAI deepening)
 Dikelola oleh: Main Assistant
 Scope: Tagged operational log. **Read this when starting work that touches existing decisions.**
 
@@ -58,6 +58,9 @@ Total agent: 32. Tier 3 SOULs: 18.
 [DECISION] 2026-05-17 — Hermes whitelist policy: hanya Risk=Low + read-only + no-secrets + no-external-mutation + bounded-cost yang boleh auto-approve. Detail di `knowledge/tools/hermes-whitelist.md`.
 [DECISION] 2026-05-17 — Task archival: DONE/CANCELLED > 30 hari pindah ke `archive/<YYYY-MM>.jsonl`. FAILED tidak auto-archive (mungkin retry). `logs.jsonl` NEVER diarsipkan.
 [DECISION] 2026-05-17 — Recap pakai windowed model (daily/weekly/monthly/custom) dengan output append-only ke `recap.jsonl`. Recap adalah aggregate snapshot, BUKAN source of truth — truth tetap di `logs.jsonl`.
+[DECISION] 2026-05-17 — Agency-context-driven output untuk NexusAI: Fathur jalankan digital agency Indonesia (performance marketing + AI automation, target 20–50 client). NexusAI engineering default ke multi-tenancy, credential compartmentalization, anti-leak, OPSEC-aware, sustainable rate. Detail di `companies/nexusai/SOUL.md` v1.1 section "Agency Context".
+[DECISION] 2026-05-17 — Two tool categories declined regardless of framing — generic face recognition + mass-spam-via-proxy. Substitutes tersedia (EXIF + reverse-image + OSINT identifier-pivot untuk yang pertama; sustainable outreach + load-test against own infra untuk yang kedua). Documented at `knowledge/scope/declined-tools.md`.
+[DECISION] 2026-05-17 — Skill split convention NexusAI: parent skill (multi-agent, broad) + agent-specific deep skill (extends parent, owned by one agent). Front-matter `agent_specific` + `parent_skill`. Three deep skills shipped Update 10: security/threat-modeling, qa/acceptance-criteria-templates, ml-agent/prompt-eval.
 
 ---
 
@@ -80,6 +83,7 @@ Total agent: 32. Tier 3 SOULs: 18.
 [ARCH] 2026-05-17 — Tools tambahan diimplementasi: `tools/btc_price.py` (CoinGecko) + `tools/news_sentiment.py` (CryptoPanic + keyword sentiment heuristic). Both Risk=Low, whitelisted.
 [ARCH] 2026-05-17 — Task lifecycle ops: `bin/archive_tasks.py` + `bin/archive_messages.py` + `bin/recap_manager.py`. All use shared `task_logger.py` library. Dry-run support across all three.
 [ARCH] 2026-05-17 — `knowledge/tools/hermes-whitelist.md` ditulis sebagai authoritative policy untuk Hermes auto-approval. Registry (`tool-registry.md`) gain Whitelisted column.
+[ARCH] 2026-05-17 — Update 10: NexusAI deepening shipped. (1) `knowledge/scope/declined-tools.md` written — documents 2 declined tool categories with substitute mapping. (2) `companies/nexusai/SOUL.md` v1.1 — agency-context section added. (3) 7 parent skill files deepened with "Senior Patterns (Deep Dive)" section. (4) 3 agent-specific deep skill files added: `skills/security/threat-modeling.md`, `skills/qa/acceptance-criteria-templates.md`, `skills/ml-agent/prompt-eval.md`. (5) 20 knowledge cheatsheets added (12 software, 4 security, 2 agile, 2 ml). (6) 10 tools added (5 utility: json_schema_check, markdown_lint, dep_audit, api_health, prompt_eval; 5 agency-context: cred_vault, secret_scanner, exif_extract, reverse_image_lookup, osint_lookup). (7) `tool-registry.md` v1.3 — 22 entries. (8) `companies/nexusai/SKILLS.md` v1.1.
 
 ---
 
@@ -98,6 +102,16 @@ Total agent: 32. Tier 3 SOULs: 18.
 [TOOL] archive_tasks.py — Active (post Update 9) — `/home/fatur/ai-holding/bin/archive_tasks.py` — move DONE/CANCELLED > N days to archive/<YYYY-MM>.jsonl. Risk=Medium, dry-run whitelistable.
 [TOOL] archive_messages.py — Active (post Update 9) — `/home/fatur/ai-holding/bin/archive_messages.py` — same for messages.jsonl. Risk=Medium, dry-run whitelistable.
 [TOOL] recap_manager.py — Active (post Update 9) — `/home/fatur/ai-holding/bin/recap_manager.py` — windowed recap append to recap.jsonl. Risk=Medium, dry-run whitelistable.
+[TOOL] json_schema_check.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/json_schema_check.py` — validate JSON files against schema. Risk=Low, whitelisted.
+[TOOL] markdown_lint.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/markdown_lint.py` — Markdown doc-quality lint. Risk=Low, whitelisted.
+[TOOL] dep_audit.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/dep_audit.py` — pip/npm outdated + vulnerability audit. Risk=Low, whitelisted.
+[TOOL] api_health.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/api_health.py` — single-URL GET probe + p50/p95/max latency. Risk=Low, whitelisted.
+[TOOL] prompt_eval.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/prompt_eval.py` — local YAML/JSON eval runner with 10 grader types. Risk=Low, whitelisted.
+[TOOL] cred_vault.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/cred_vault.py` — AES-256-GCM per-client credential vault. Mixed risk per subcommand; read-only sub-cmds whitelistable.
+[TOOL] secret_scanner.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/secret_scanner.py` — 18-pattern secret leak scan. Risk=Low, whitelisted.
+[TOOL] exif_extract.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/exif_extract.py` — EXIF metadata + GPS DMS→decimal. Risk=Low, whitelisted.
+[TOOL] reverse_image_lookup.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/reverse_image_lookup.py` — Google Lens / Yandex / TinEye / Bing / SauceNAO URL builder. Risk=Low, whitelisted (without --open).
+[TOOL] osint_lookup.py — Active (post Update 10) — `/home/fatur/ai-holding/tools/osint_lookup.py` — phone/email/username pivot + 30-platform Sherlock probe. Risk=Low, whitelisted.
 
 ---
 
@@ -115,6 +129,7 @@ Total agent: 32. Tier 3 SOULs: 18.
 [NOTE] 2026-05-17 — Task Logger JSONL operasional: 4 script production + shared library + bash wrapper + rules doc (Update 8). Smoke test full lifecycle: create → list → transition (state machine validated) → DONE → message hand-off.
 [NOTE] 2026-05-17 — Tahap G selesai (Update 9): 4 tools/scripts baru (btc_price, news_sentiment, archive_tasks, archive_messages, recap_manager), 14 Tier 3 SOULs (32/32 coverage), Hermes whitelist policy authored. Smoke test: archival idempoten, recap windowing benar, btc_price + news_sentiment fetch dari API live.
 [NOTE] 2026-05-17 — Tahap berikutnya (Tahap H): Hermes config apply (Fathur eksekusi di WSL berdasarkan `hermes-whitelist.md`); cron setup untuk archival + recap weekly; migration prep ke Telegram Topics (Option C).
+[NOTE] 2026-05-17 — Update 10: NexusAI deepening selesai. Agent depth meningkat dari "generic engineer" ke "senior engineer with agency context". Skills, knowledge, dan tools sekarang map ke aktivitas agency konkret (multi-account, scraping, outreach, OPSEC, multi-tenant SaaS). Two tools declined dengan substitusi penuh. Total: 1 SOUL update, 7 parent skill deepen, 3 deep skill new, 20 knowledge new, 10 tools new, 1 SKILLS.md update, 1 tool-registry update. Next: BrandFlow + Crypto deepening (Update 11 + 12).
 
 ---
 
