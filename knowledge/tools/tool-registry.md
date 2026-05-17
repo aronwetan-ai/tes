@@ -1,7 +1,7 @@
 # Tool Registry — AI Holding
 
-Versi: 1.3
-Update terakhir: 2026-05-17 (post Update 10 — NexusAI deepening)
+Versi: 1.4
+Update terakhir: 2026-05-17 (post Update 11 — BrandFlow deepening)
 Dikelola oleh: Main Assistant
 
 ---
@@ -47,6 +47,11 @@ Declined-tools scope: lihat `knowledge/scope/declined-tools.md` untuk hal yang t
 | 020 | exif_extract.py      | Low     | Active   | Yes         | Auto            |
 | 021 | reverse_image_lookup.py | Low  | Active   | Yes (no `--open`) | Auto      |
 | 022 | osint_lookup.py      | Low     | Active   | Yes         | Auto            |
+| 023 | utm_builder.py       | Low     | Active   | Yes         | Auto            |
+| 024 | readability_check.py | Low     | Active   | Yes         | Auto            |
+| 025 | brand_voice_lint.py  | Low     | Active   | Yes         | Auto            |
+| 026 | content_scheduler.py | Medium  | Active   | Read-only sub-cmds | User confirm |
+| 027 | social_monitor.py    | Low     | Active   | Yes         | Auto            |
 
 ---
 
@@ -434,6 +439,114 @@ Approval    : Auto
 Depends on  : Python 3 stdlib only (urllib, ThreadPoolExecutor).
 
 Reference: `knowledge/scope/declined-tools.md` (substitute for face recognition).
+
+---
+
+### TOOL-023 — UTM URL Builder
+Name        : utm_builder.py
+Path        : /home/fatur/ai-holding/tools/utm_builder.py
+Command     : python3 /home/fatur/ai-holding/tools/utm_builder.py --url URL --source S --medium M --client C --campaign-slug X --month YYYY-MM --content PIECE-ID [--variant V] [--term T] [--json] [--list-allowed]
+Purpose     : Build convention-validated UTM-tagged URLs per `knowledge/marketing/utm-conventions.md`. Rejects custom formats so analytics is joinable across clients.
+Output      : Tagged URL (default) or JSON {url, params}.
+Used by     : `@brandflow.analytics`, `@brandflow.social`, `@brandflow.copywriter`, `@brandflow.cmo`.
+Risk        : Low — no FS write, no network, just URL construction.
+Status      : Active (post Update 11)
+Whitelisted : Yes
+Approval    : Auto
+
+Allowed sources / media listed in `knowledge/marketing/utm-conventions.md`. `--list-allowed` prints the allowlist.
+
+Reference: `knowledge/marketing/utm-conventions.md`, `companies/brandflow/skills/automation/SKILL.md`.
+
+---
+
+### TOOL-024 — Readability + Structure Scan
+Name        : readability_check.py
+Path        : /home/fatur/ai-holding/tools/readability_check.py
+Command     : python3 /home/fatur/ai-holding/tools/readability_check.py [paths] [--channel ig|linkedin|x|email-subj|email-pre|blog-title|blog] [--stdin] [--json] [--markdown]
+Purpose     : Flesch reading ease + sentence-length distribution + filler/adverb/passive scan + per-channel length compliance + (markdown) H1/H2/H3 hierarchy + image-alt-text presence.
+Output      : Per-input human report or JSON list. Issues classified by severity.
+Used by     : `@brandflow.copywriter`, `@brandflow.qa`, `@brandflow.writer`, `@brandflow.seo`.
+Risk        : Low — read-only.
+Status      : Active (post Update 11)
+Whitelisted : Yes
+Approval    : Auto
+
+Notes:
+- Flesch is English-leaning heuristic; for Indonesian text treat as directional.
+- Hook-zone analysis (first 1-2 sentences) helps senior copy review.
+- Exit 0 = no warn/blocker issues; 1 = warn/blocker issues; 2 = arg/IO error.
+
+Reference: `knowledge/marketing/social-platform-specs.md`, `companies/brandflow/skills/content/SKILL.md`.
+
+---
+
+### TOOL-025 — Brand Voice Lint
+Name        : brand_voice_lint.py
+Path        : /home/fatur/ai-holding/tools/brand_voice_lint.py
+Command     : python3 /home/fatur/ai-holding/tools/brand_voice_lint.py --profile PROFILE [--draft FILE | --stdin] [--json] [--threshold N]
+Purpose     : Score a draft against a locked brand voice profile (per `knowledge/marketing/brand-voice-rubric.md`). Detects vocab do/dont, POV slips, emoji policy, punctuation quirks, off-limits topics, sentence-length pattern.
+Output      : Drift score 0-100 + per-dimension issues + suggested fixes.
+Used by     : `@brandflow.qa`, `@brandflow.copywriter`, `@brandflow.cmo`.
+Risk        : Low — read-only.
+Status      : Active (post Update 11)
+Whitelisted : Yes
+Approval    : Auto
+Depends on  : Profile JSON (or YAML if `pyyaml` is installed).
+
+Severity weights: blocker=25, warn=8, minor=3 → composite 0-100.
+Verdict labels: on-brand (<15), minor-drift (15-29), drifted (30-59), severe-drift (≥60).
+Threshold default: 30 (drift).
+
+Reference: `knowledge/marketing/brand-voice-rubric.md`, `companies/brandflow/skills/qa/SKILL.md`.
+
+---
+
+### TOOL-026 — Content Scheduler / Editorial Pipeline
+Name        : content_scheduler.py
+Path        : /home/fatur/ai-holding/tools/content_scheduler.py
+Command     : python3 /home/fatur/ai-holding/tools/content_scheduler.py {list|add|advance|approve|release|validate} ...
+Purpose     : BrandFlow editorial pipeline state machine over per-client JSONL files. Enforces: stage state machine validation, brief-completeness gate at IDEA→BRIEF, **hardcoded Boundary #4 gate at FATHUR_APPROVED→PUBLISHED**, channel daily cap.
+Output      : Per subcommand; `list --json` returns array.
+Used by     : `@brandflow.pm`, `@brandflow.social`, `@brandflow.cmo`, Fathur (for approve sub-command).
+Risk        : Medium — mutates JSONL pipeline files for write subcommands; read-only for `list` / `validate`.
+Status      : Active (post Update 11)
+Whitelisted : Read-only sub-commands (`list`, `validate`) yes; mutating sub-commands (`add`, `advance`, `approve`, `release`) require user confirm.
+Approval    : Mixed per sub-command
+Depends on  : Python 3 stdlib only; `AI_HOLDING_HOME` env var (or default `/home/fatur/ai-holding`).
+
+Subcommand risk profile:
+- `list` / `validate`        — Low (read-only). Whitelistable.
+- `add`                      — Medium (appends to inbox.jsonl). Confirm.
+- `advance`                  — Medium (state-machine transition + rewrites JSONL). Confirm.
+- `approve`                  — Medium (Boundary #4 audit; only `--by fathur` allowed). Confirm.
+- `release`                  — Medium (publishes; cap-checked). Confirm.
+
+State machine: IDEA → BRIEF → DRAFT → REVIEW (→REVISION) → APPROVED → SCHEDULED → FATHUR_APPROVED → PUBLISHED → MEASURED → ARCHIVED. KILLED / ARCHIVED terminal.
+
+Reference: `companies/brandflow/skills/automation/SKILL.md`, Root SOUL Boundary #4.
+
+---
+
+### TOOL-027 — Social Monitor / Crisis Tier Suggester
+Name        : social_monitor.py
+Path        : /home/fatur/ai-holding/tools/social_monitor.py
+Command     : python3 /home/fatur/ai-holding/tools/social_monitor.py {--input FILE | --stdin} [--period-hours N] [--client X] [--json]
+Purpose     : Sentiment classification (keyword heuristic, directional) + cluster detection + spread/influencer/journalist/critical-language signals → crisis tier suggestion (T1 / T2 / T3 / T4) keyed to `knowledge/marketing/crisis-comms-playbook.md`.
+Output      : Human report or JSON; non-zero exit if T2+.
+Used by     : `@brandflow.community`, `@brandflow.cmo`, `@brandflow.analytics`, `@brandflow.ceo`.
+Risk        : Low — read-only.
+Status      : Active (post Update 11)
+Whitelisted : Yes
+Approval    : Auto
+
+Notes:
+- Sentiment is **keyword heuristic, directional only** — explicit disclaimer in output. Pair with human review.
+- Influencer threshold: from_followers ≥ 10,000.
+- Critical-language indicators: legal / lawsuit / boycott / fraud / scam (Indonesian + English).
+- Tier suggestion is advisory; the Boundary #4 + crisis-comms playbook still owns the decision.
+
+Reference: `knowledge/marketing/crisis-comms-playbook.md`, `companies/brandflow/skills/community/crisis-playbook.md`.
 
 ---
 
