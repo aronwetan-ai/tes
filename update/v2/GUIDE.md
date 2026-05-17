@@ -1,0 +1,328 @@
+# SUPERAGENT Brain System — GUIDE.md
+
+> Panduan lengkap untuk setup, deploy, dan kustomisasi SUPERAGENT AI Agent.
+
+---
+
+## ⚠️ PENTING: Tentang Free Tier
+
+Brain SUPERAGENT **bisa jalan di free tier** (Claude Free, OpenClaw Free, Hermes Free, dll),
+tetapi **kurang optimal** karena:
+
+- **Token limit rendah** — free tier biasanya hanya 4k–8k context. Brain SUPERAGENT paling optimal di 32k+ context window.
+- **Skill module mungkin terpotong** — saat banyak module di-load, output bisa terpotong karena limit.
+- **Memory persistence terbatas** — session memory dan long-term memory makan token tambahan.
+
+**Rekomendasi:**
+| Tier | Pengalaman | Catatan |
+|------|------------|---------|
+| Free tier | ⚡ Bisa jalan, tapi output kadang terpotong | Cocok untuk coba-coba |
+| API key sendiri (pay-per-use) | ✅ Optimal | Paling fleksibel, bayar sesuai pemakaian |
+| Plan berbayar (Pro/Team) | ✅ Optimal | Context window besar, fitur lengkap |
+
+> **Brain SUPERAGENT sendiri sudah dioptimalkan untuk jalan di semua tier** — tidak ada batasan di brain-nya. Perbedaan hanya dari batasan platform yang digunakan.
+
+---
+
+## 📦 Apa Isi Paket Ini?
+
+Terdapat **3 varian** brain system SUPERAGENT, masing-masing untuk platform berbeda:
+
+| Folder | Platform Target | Entry Point |
+|--------|----------------|-------------|
+| `SUPERAGENT-DEV/dev/` | **Claude Projects** (Anthropic Console) | `claude.md` → `AGENTS.md` |
+| `SUPERAGENT-DIST/dist/` | **Claude Projects** (obfuscated/distribusi) | `claude.md` → `brain.md` |
+| `SUPERAGENT-OPENCLAW/SUPERAGENT-OPENCLAW/` | **OpenClaw / Hermes** (self-hosted agent) | `AGENTS.md` (auto-injected) |
+
+---
+
+## 🧠 Arsitektur Brain
+
+```
+┌─────────────────────────────────────────┐
+│              ENTRY POINT                │
+│  (claude.md / AGENTS.md)               │
+├─────────────────────────────────────────┤
+│           ALWAYS-ON LAYER              │
+│  Identity + Reflection Loop + Rules    │
+├─────────────────────────────────────────┤
+│           SKILL ROUTER                 │
+│  Deteksi intent → load modul on-demand │
+├──────┬──────┬──────┬──────┬────────────┤
+│  m1  │  m2  │  m3  │  m4  │    ...     │
+│money │ vps  │content│ auto │   m5-m9   │
+├──────┴──────┴──────┴──────┴────────────┤
+│         EXPANSION MODULES              │
+│  x1 (audit) │ x2 (strategy) │ x3 (debug)│
+├─────────────────────────────────────────┤
+│             MEMORY LAYER               │
+│  Session log + Long-term context       │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## 🔧 Skill Modules (m1–m9, x1–x3)
+
+| ID | Nama | Trigger Keywords | Fungsi |
+|----|------|-----------------|--------|
+| **m1** | Money / Monetization | business, income, sell, funnel, pricing, cuan, jual | Strategi monetisasi & pricing |
+| **m2** | VPS / DevOps | server, VPS, deploy, linux, bash, docker, nginx | Setup server & deployment |
+| **m3** | Content | content, caption, viral, hook, script, TikTok, konten | Pembuatan konten & distribusi |
+| **m4** | Automation | bot, automation, cron, webhook, workflow, Make, n8n | Otomasi & bot |
+| **m5** | Data | data, spreadsheet, analytics, report, Excel, CSV | Analisis data & laporan |
+| **m6** | API | API, integration, REST, SDK, endpoint, integrasi | Integrasi & service bridging |
+| **m7** | AI Builder | AI, prompt, agent, LLM, Claude API, GPT, OpenRouter, Kimi | Bangun aplikasi AI (multi-provider) |
+| **m8** | File | file, PDF, DOCX, XLSX, PPTX, generate, export | Produksi dokumen & file |
+| **m9** | Web / Frontend | website, landing page, frontend, React, HTML, CSS, Tailwind | Bangun web & UI |
+| **x1** | Self-Improve | audit, improve system, review agent | Audit & optimasi sistem |
+| **x2** | Deep Thinking | complex, strategy, multi-step, architecture | Analisis mendalam |
+| **x3** | Debug | error, bug, not working, failed, debug | Diagnosis & fix error |
+
+---
+
+## 🤖 AI Provider yang Didukung (m7 — AI Builder)
+
+Brain SUPERAGENT menyediakan code template untuk **semua provider utama** — user bebas pilih sesuai kebutuhan:
+
+| Provider | Endpoint | Kelebihan |
+|----------|----------|-----------|
+| **Anthropic** | `api.anthropic.com/v1/messages` | Claude, reasoning terbaik |
+| **OpenRouter** | `openrouter.ai/api/v1/chat/completions` | 1 key → semua model (Claude, GPT, Llama, dll) |
+| **OpenAI** | `api.openai.com/v1/chat/completions` | GPT-4o, multimodal |
+| **Kimi (Moonshot)** | `api.moonshot.cn/v1/chat/completions` | Context 128k+, bagus untuk bahasa Asia |
+| **Groq** | `api.groq.com/openai/v1/chat/completions` | Ultra-cepat (Llama, Mixtral) |
+| **DeepSeek** | `api.deepseek.com/v1/chat/completions` | Murah, bagus untuk coding |
+| **Together AI** | `api.together.xyz/v1/chat/completions` | Open-source models, murah |
+| **Google Gemini** | `generativelanguage.googleapis.com/v1beta` | Gemini Pro/Ultra |
+
+**Panduan pilih provider:**
+```
+Butuh kualitas terbaik?     → Anthropic (Claude) atau OpenAI (GPT-4o)
+Butuh paling murah?         → DeepSeek atau Groq
+Butuh akses multi-model?    → OpenRouter (1 key, semua model)
+Butuh context panjang?      → Kimi (Moonshot) — 128k+
+Butuh paling cepat?         → Groq
+Butuh coding specialist?    → DeepSeek
+Butuh open-source?          → Together AI atau Groq
+```
+
+> Semua template sudah include error handling dan `.env.example`. User cukup pilih 1 provider — tidak perlu semua.
+
+---
+
+## 🚀 Setup Per Platform
+
+### A. Claude Projects (SUPERAGENT-DEV)
+
+1. Buka [console.anthropic.com](https://console.anthropic.com)
+2. Buat Project baru → **"SUPERAGENT"**
+3. Di bagian **Project Knowledge**, upload semua file dari folder `dev/`:
+   - `claude.md` (entry point — set sebagai **Custom Instructions**)
+   - `AGENTS.md`, `soul.md`, `self-improve-lite.md`
+   - Semua file di `skills/` (money.md, vps.md, content.md, web.md, dll.)
+   - Semua file di `advanced/` (debug-mode.md, deep-thinking.md, self-improve-advanced.md)
+   - Semua file di `memory/` (history.md, today.md)
+4. Set `claude.md` sebagai **System Prompt** / **Custom Instructions**
+5. Mulai chat — SUPERAGENT akan otomatis aktif
+
+### B. Claude Projects — Distribusi (SUPERAGENT-DIST)
+
+Sama seperti DEV, tapi gunakan folder `dist/`:
+1. Upload `claude.md` sebagai entry point
+2. Upload `brain.md` + semua file di `core/` dan `memory/`
+3. Versi ini menggunakan bahasa obfuscated — cocok untuk distribusi ke klien
+
+### C. OpenClaw / Hermes (SUPERAGENT-OPENCLAW)
+
+1. Buka dashboard OpenClaw / Hermes
+2. Buat agent baru → nama **"SUPERAGENT"**
+3. Upload semua file dari folder `SUPERAGENT-OPENCLAW/`:
+   - `AGENTS.md` — primary brain (auto-injected setiap session)
+   - `IDENTITY.md` — nama & karakter
+   - `SOUL.md` — persona & boundaries
+   - `HEARTBEAT.md` — heartbeat checklist
+   - `TOOLS.md` — capability awareness
+   - `USER.md` — isi profil kamu
+   - `MEMORY.md` — konteks jangka panjang
+   - Semua file di `skills/` (m0–m9, x1–x3)
+   - Semua file di `memory/`
+4. **Penting:** Edit `USER.md` dengan data kamu sebelum run pertama
+5. Start session
+
+---
+
+## ⚙️ Kustomisasi
+
+### Ganti Nama Agent
+1. Cari-replace `"SUPERAGENT"` di semua file
+2. Ganti juga di `IDENTITY.md` / `soul.md` / `m0.md`
+
+### Tambah Skill Baru
+1. Buat file baru: `skills/m10.md` (atau nama deskriptif)
+2. Format:
+   ```markdown
+   # m10 — [Nama Skill]
+   ---
+   ## Operator Profile
+   [Deskripsi 1 baris]
+   
+   ## [Section utama — template/code/framework]
+   
+   ## Constraints
+   - [aturan output]
+   ```
+3. Tambahkan entry di:
+   - Router (AGENTS.md / brain.md)
+   - Skill Registry (m0.md)
+4. Tambahkan trigger keywords
+
+### Edit Persona / Tone
+- **DEV:** Edit `soul.md`
+- **DIST:** Edit `core/m0.md` bagian IDENTITY
+- **OPENCLAW:** Edit `SOUL.md` + `IDENTITY.md`
+
+### Edit Boundaries
+- **DEV:** Edit `soul.md` bagian Boundaries
+- **OPENCLAW:** Edit `SOUL.md` bagian Flexibility Doctrine
+
+---
+
+## 🔑 Environment Variables yang Dibutuhkan
+
+Jika menggunakan fitur API/AI Builder, siapkan yang dibutuhkan saja:
+
+```bash
+# .env — pilih provider yang dipakai, tidak perlu semua
+ANTHROPIC_API_KEY=sk-ant-your-key-here       # Anthropic (Claude)
+OPENROUTER_API_KEY=sk-or-your-key-here       # OpenRouter (multi-model)
+OPENAI_API_KEY=sk-your-key-here              # OpenAI (GPT-4o)
+KIMI_API_KEY=your-moonshot-key-here           # Kimi / Moonshot
+GROQ_API_KEY=gsk_your-key-here               # Groq (fast inference)
+DEEPSEEK_API_KEY=your-deepseek-key-here      # DeepSeek
+
+# Untuk skill lain
+BOT_TOKEN=from_botfather                      # m4: Telegram Bot
+API_KEY=your-api-key                          # m6: API integrations
+MIDTRANS_SERVER_KEY=your-midtrans-key         # m6: Payment Indonesia
+WA_PHONE_ID=your-whatsapp-phone-id            # m6: WhatsApp API
+```
+
+---
+
+## 📝 Cara Memory Bekerja
+
+### Session Memory
+- **DEV:** `memory/today.md` — log harian, ditulis otomatis saat session berjalan
+- **DIST:** `memory/session.md` — sama, format session-based
+- **OPENCLAW:** `memory/[YYYY-MM-DD].md` — file per hari
+
+### Long-Term Memory
+- **DEV:** `memory/history.md` — isi manual dengan goals, projects, preferences
+- **DIST:** `memory/context.md` — format yang sama
+- **OPENCLAW:** `MEMORY.md` — format compact
+
+### Tips Memory
+1. Isi long-term memory **sebelum** session pertama
+2. SUPERAGENT akan otomatis menulis ke session memory saat ada keputusan penting
+3. Review dan bersihkan memory secara berkala untuk hemat token
+
+---
+
+## 🔄 Changelog — Perbaikan v2
+
+### Critical Fixes
+1. **Claude API auth headers** — Semua panggilan ke Anthropic API sekarang menyertakan `x-api-key` dan `anthropic-version` header yang wajib. Sebelumnya missing → API call akan gagal.
+2. **DIST claude.md kosong** — Entry point sekarang benar mereferensikan `@brain.md`.
+3. **DIST brain.md R4 salah referensi** — `memory/today.md` diubah ke `memory/session.md` (sesuai struktur folder).
+
+### New Features
+4. **Skill m9 (Web/Frontend)** — Modul baru untuk bangun website, landing page, React apps, Tailwind CSS. Termasuk template HTML, React component pattern, SEO checklist, dan deploy guide.
+5. **Indonesian keyword mapping** — Router sekarang mengenali keyword Indonesia: bikin web, jual, konten, otomatis, laporan, integrasi, gagal, dll.
+6. **Multi-provider AI Builder (m7)** — Sekarang mendukung 7+ provider: Anthropic, OpenRouter, OpenAI, Kimi/Moonshot, Groq, DeepSeek, Together AI. Termasuk Universal Python Wrapper untuk switch antar provider.
+
+### Improvements
+7. **Error handling** — Semua API call sekarang include proper error handling.
+8. **`.env.example`** — Ditambahkan untuk semua provider di m7.
+9. **HEARTBEAT.md diperkaya** — Tambah referensi ke skill registry loading.
+10. **TOOLS.md diupdate** — Termasuk capability web/landing page building.
+11. **Provider Selection Guide** — Panduan pilih provider berdasarkan kebutuhan (murah, cepat, kualitas, dll).
+
+---
+
+## 💡 Tips Penggunaan
+
+1. **Mulai dengan jelas** — "Bikin landing page untuk jasa AI" lebih baik dari "bikin website"
+2. **Gunakan keyword trigger** — SUPERAGENT akan otomatis load modul yang tepat
+3. **Bahasa bebas** — SUPERAGENT auto-detect bahasa. Campur Indo-English juga fine
+4. **Minta upgrade** — Kalau output sudah oke, bilang "upgrade" atau "improve" untuk versi lebih baik
+5. **Self-audit** — Bilang "audit your system" untuk SUPERAGENT review performanya sendiri
+6. **Pilih provider bebas** — Mau pakai Claude, GPT, Kimi, DeepSeek — semua didukung di m7
+
+---
+
+## 🏗️ Struktur File
+
+### SUPERAGENT-DEV
+```
+dev/
+├── claude.md              ← Entry point (Custom Instructions)
+├── AGENTS.md              ← Core brain & router
+├── soul.md                ← Identity & tone
+├── self-improve-lite.md   ← Reflection loop (always-on)
+├── skills/
+│   ├── money.md           ← m1: Monetisasi
+│   ├── vps.md             ← m2: Server & DevOps
+│   ├── content.md         ← m3: Content creation
+│   ├── automation.md      ← m4: Bot & automation
+│   ├── data.md            ← m5: Data & analisis
+│   ├── api.md             ← m6: API & integrasi
+│   ├── ai_builder.md      ← m7: AI & prompt (multi-provider)
+│   ├── file.md            ← m8: File production
+│   └── web.md             ← m9: Web & frontend [BARU]
+├── advanced/
+│   ├── debug-mode.md      ← x3: Debug & error
+│   ├── deep-thinking.md   ← x2: Strategic thinking
+│   └── self-improve-advanced.md ← x1: System audit
+└── memory/
+    ├── history.md         ← Long-term context
+    └── today.md           ← Daily session log
+```
+
+### SUPERAGENT-DIST
+```
+dist/
+├── claude.md              ← Entry point [FIXED]
+├── brain.md               ← Core brain & router [FIXED]
+├── core/
+│   ├── m0.md              ← Runtime core + skill registry [+m9]
+│   ├── m1.md – m8.md      ← Skill modules
+│   ├── m9.md              ← Web & frontend [BARU]
+│   ├── x1.md – x3.md      ← Expansion modules
+├── memory/
+│   ├── session.md         ← Session log
+│   └── context.md         ← Persistent context
+```
+
+### SUPERAGENT-OPENCLAW
+```
+SUPERAGENT-OPENCLAW/
+├── AGENTS.md              ← Primary brain & router [+m9, +ID keywords]
+├── IDENTITY.md            ← Name & character
+├── SOUL.md                ← Persona & boundaries
+├── HEARTBEAT.md           ← Heartbeat checklist [IMPROVED]
+├── TOOLS.md               ← Capability awareness [UPDATED]
+├── USER.md                ← Owner profile (edit before first run!)
+├── MEMORY.md              ← Long-term context
+├── skills/
+│   ├── m0.md              ← Skill registry [+m9]
+│   ├── m1.md – m8.md      ← Skill modules
+│   ├── m9.md              ← Web & frontend [BARU]
+│   └── x1.md – x3.md      ← Expansion modules
+└── memory/
+    └── [YYYY-MM-DD].md    ← Daily logs
+```
+
+---
+
+*SUPERAGENT v2 — Built for execution. 🔥*
