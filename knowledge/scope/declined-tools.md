@@ -1,8 +1,8 @@
 # Declined Tools — Scope Documentation
 
-Versi: 1.1
-Update terakhir: 2026-05-17 (Update 11 — BrandFlow deepening; Items 3 + 4 added)
-Status: Authoritative reference for what NexusAI / BrandFlow / AI Holding **does NOT build**, regardless of framing.
+Versi: 1.2
+Update terakhir: 2026-05-17 (Update 12 — Crypto Consultant deepening; Item 5 added; Items 3-4 land via Update 11 / PR #8 BrandFlow)
+Status: Authoritative reference for what NexusAI / BrandFlow / Crypto Consultant / AI Holding **does NOT build**, regardless of framing.
 Audience: Future agents + Fathur + future operators.
 
 ---
@@ -91,77 +91,60 @@ These three workflows cover essentially all legitimate operational needs that a 
 
 ---
 
-## Item 3 — Engagement-Faking Tooling (Bot Likes / Follower Buying / Fake-Comment Generation)
+## Item 5 — Automated "Guaranteed Signal" / Auto-Trading Bot
 
 ### Requested
-During the BrandFlow deepening discussion (Update 11), the implicit-but-unstated request lurking in any agency-context conversation: tools to inflate engagement metrics on owned or client accounts. Bot-like generation, follower buying integration, fake-comment producers, view-count inflation against the platforms' own systems.
+During the Crypto Consultant deepening discussion (Update 12), the implicit-but-recurring request: a tool that produces **buy/sell signals** algorithmically, or that auto-executes trades based on the company's pattern detection / on-chain reads / news sentiment. Often framed as: "since the agents already analyze the market, why not let them just trade?"
+
+The agency-context twist: clients (and Fathur himself in some moods) want the analysis pipeline collapsed into automated execution.
 
 ### Declined
-- Engagement faking violates every major platform's terms of service. Detection is increasingly automated and cross-platform; once flagged, accounts are punished for months or permanently.
-- An agency caught faking engagement on a client account does not just lose that client — the agency's whole roster reads it as "you might be doing this on my account too."
-- Faked engagement looks plausible to the client for ~30-60 days, then the conversion-rate math breaks the illusion: 30k followers, 5 sales = obvious fakes. Reputational damage to the agency at that point is permanent.
-- Sits in the "coordinated platform abuse" category alongside Item 2, but specifically scoped to the engagement-fakery sub-pattern that recurs in agency conversations.
+- Crypto Consultant's entire identity is **probabilistic analysis with explicit uncertainty**, not signal production. Auto-execution erases the layer that makes the analysis honest.
+- All sample sizes for crypto patterns are small (N=3-4 cycles). Confidence levels appropriate for "investigate further" are wildly inappropriate for "automatically deploy capital."
+- Auto-trading bots in crypto have a graveyard-tier failure history. The well-known ones either: lose money silently on outlier moves; get exploited via predictable behavior; lock users out during the exact moments human judgment is needed.
+- Boundary #4 amplified: a bot that trades under Fathur's name is "speaking as Fathur in public" continuously; the per-decision approval gate disappears.
+- Liability/regulatory: depending on jurisdiction, automated signal-as-service can trigger investment-adviser registration or securities laws. Out of scope for this repo.
+- Sits in the same kernel as Item 2 (mass platform abuse) — a tool whose scope cannot be bounded by its framing once shipped.
 
 ### Built Instead
 
-For **building real engagement at sustainable rate**:
+For the **legitimate "I want decisions to be more systematic"** workflow:
 
 | Tool / Skill | Path | Covers |
 |---|---|---|
-| `tools/content_scheduler.py` | local | Pipeline state machine + Boundary #4 gate — ensures every piece earns its publish slot through approval, not automation. |
-| `tools/social_monitor.py` | local | Sentiment + cluster + signal detection. Surfaces real audience reactions so the agency can respond and shape future content. |
-| `tools/brand_voice_lint.py` | local | Voice consistency = audience trust = real engagement. |
-| `tools/readability_check.py` | local | Format compliance + hook strength = real reach. |
-| `companies/brandflow/skills/content/SKILL.md` (deepened) | skill | Senior copy patterns that earn engagement organically. |
-| `companies/brandflow/skills/community/SKILL.md` (deepened) | skill | Engagement seeding — proactively replying on relevant accounts as the brand, building relationship before asking for the click. |
-| `companies/brandflow/skills/research/SKILL.md` (deepened) | skill | Voice-of-customer mining — finding the language that genuinely lands. |
-| `knowledge/marketing/content-calendar-patterns.md` | knowledge | Cadence discipline. 3 strong posts/week beats 7 mediocre. |
-| `knowledge/marketing/kpi-cheatsheet.md` | knowledge | Engagement *quality* metrics (saves, shares, repeat-engagement) vs vanity (likes, follower count). |
+| `tools/price_scraper.py` | local | Historical OHLCV; the data input that real research needs |
+| `tools/pattern_detector.py` | local | **Detects** patterns over OHLCV; outputs pattern name + base rate + invalidation. Does NOT issue signals. Pattern firing = signal to investigate, not directive to act. |
+| `tools/onchain_metrics.py` | local | Network-health + DeFi TVL data for senior reads |
+| `tools/funding_rates.py` | local | Derivatives-lens data; positioning context |
+| `tools/news_scraper.py` | local | Narrative-lens data with explicit sentiment-heuristic disclaimer |
+| `companies/crypto-consultant/skills/pattern-recognition/SKILL.md` | skill | The 3-Guard discipline — name+source / base rate / invalidation; force-fit detection |
+| `companies/crypto-consultant/skills/research/SKILL.md` (deepened) | skill | 3-Lens Convergence Test, Forecast Ledger, Brier calibration |
+| `companies/crypto-consultant/skills/risk/SKILL.md` (deepened) | skill | Drawdown floors, position-sizing math, cycle-phase risk posture |
+| `knowledge/crypto/forecast-evaluation.md` | knowledge | Calibration tracking — track which patterns / agents call cycles well over time |
+| `knowledge/crypto/scenario-modeling.md` | knowledge | Probability-weighted scenarios with ranges, not point predictions |
 
-For **the legitimate "we want more engagement" goal**, the substitute is: better content + better hooks + better cadence + real community work. Slower, but the only thing that compounds.
+For the **legitimate "I want execution to be mechanical"** workflow (the discipline part of "auto-trade"):
+- Pre-defined entry zones, invalidation levels, and sizing math from `@crypto.risk` BEFORE entry
+- "Stop means stop" rule from risk skill — mechanical execution at the trader's hand, not a bot's
+- Predefined partial-take levels per setup
+- Forecast ledger entry filed before any size goes on
+- Post-mortem for every closed position, win or loss
 
-### Reference
-- `companies/brandflow/SOUL.md` — Agency Context section explicitly lists this as out-of-scope.
-- Root SOUL — Boundary #4.
-- `knowledge/marketing/kpi-cheatsheet.md` — vanity-metric anti-patterns.
+This produces **systematic decision-making** without abdicating judgment to a bot. The discipline is mechanical; the trade decision remains human, with full Boundary #4 gating intact.
 
----
+### What Crypto Consultant Will Not Output, Period
 
-## Item 4 — AI-Generated Impersonation of Real Public Figures
-
-### Requested
-The implicit-but-unstated request: tooling that produces text/visual/audio in the voice of a named non-Fathur public figure (entrepreneur / celebrity / politician / journalist) without that person's consent. Often framed as "in the style of X" — e.g. "write a thread in Naval-style," "generate visuals like Casey Neistat," "voice over in Andrew Tate's tone."
-
-The agency-context twist: clients sometimes ask for content "in the style of [admired figure]" to catch their audience.
-
-### Declined
-- "Style of X" can be admired-borrowing (legitimate inspiration, common in design / writing) **or** impersonation (specific enough that audiences mistake the output for the real person). The line moves with the level of fidelity. High-fidelity impersonation without consent is the failure mode this item declines.
-- Impersonation creates legal exposure (right of publicity, defamation, misappropriation) varying by jurisdiction. Indonesia's regulatory environment around AI deepfakes is hardening; not a stable foundation to build agency tooling on.
-- Reputational stakes for the impersonated figure (and for the agency, when discovered) are asymmetric and irreversible.
-- Generative-AI deepfake tooling specifically (voice-clone of a named living person, video face-swap of a named living person) is the version that sits in the absolute-no list alongside Item 1's biometric matching.
-
-### Built Instead
-
-For the **legitimate "we want a brand voice that resonates"** workflow:
-
-| Tool / Skill | Path | Covers |
-|---|---|---|
-| `knowledge/marketing/brand-voice-rubric.md` | knowledge | 8-dimension voice profile capture for the **client themselves** — produces a voice that's distinctively the client's. |
-| `companies/brandflow/skills/content/hook-library.md` | skill | Pickable hook patterns + per-client voicing. The mechanism is borrowed; the phrase is the client's. |
-| `companies/brandflow/skills/research/SKILL.md` (deepened) | skill | "Adjacent inspiration" — borrow voice/visual moves from non-competitor admired brands; that's craft, not impersonation. |
-| `tools/brand_voice_lint.py` | local | Enforces output stays in the client's locked voice profile, not drifting toward a copy of someone else. |
-
-For **borrowing-the-mechanism inspiration** (the legitimate version of "in the style of X"):
-- Read what X does well at the structural level (hook patterns, cadence, format).
-- Apply the structure with the client's own voice and topic.
-- Cite the influence in internal docs; never claim or mimic the figure publicly.
-
-This produces output that *learns from* admired voices without *being* them.
+- `BUY $X at price Y, target Z, stop W` (commands phrased as advice or as bot-instruction).
+- "Guaranteed setup" / "high-probability play" without 3-Guard discipline.
+- Single-number price targets without ranges and probabilities.
+- Auto-publishing of analysis to social channels (Boundary #4).
+- Wallet attribution claims at Tier 3-4 confidence in publishable output.
 
 ### Reference
-- `companies/brandflow/SOUL.md` — Agency Context section explicitly lists this as out-of-scope.
-- `knowledge/marketing/brand-voice-rubric.md` — consented voice profile capture is the sanctioned alternative.
-- `knowledge/marketing/copywriting-frameworks.md` — frameworks paraphrase established traditions; this file flags content paraphrased for licensing compliance.
+- `companies/crypto-consultant/SOUL.md` — Prediction Discipline section explicitly limits this scope.
+- Root SOUL — Boundary #4 + Real Boundary #2 (irreversible external action requires confirmation).
+- `companies/crypto-consultant/skills/research/SKILL.md` Senior Patterns — 3-Lens Convergence + Forecast Ledger.
+- `knowledge/crypto/forecast-evaluation.md` — calibration discipline replaces "trust the bot" with "track the track record."
 
 ---
 
@@ -192,9 +175,12 @@ This way, six months from now, a new agent reading the repo can understand the g
 
 | Item | Declined | Built Instead |
 |---|---|---|
-| Generic face recognition / biometric matching | Yes | EXIF + reverse image + OSINT identifier-pivot chain |
-| Mass spam via proxy abuse / coordinated platform abuse | Yes | Sustainable rate-limited outreach + load test against own infra + product-internal A/B harness |
-| Engagement-faking tooling (bot likes, follower buying, fake-comment generation) | Yes | Real-engagement toolset: `social_monitor.py` + `content_scheduler.py` + community-skill discipline |
-| AI-generated impersonation of real public figures | Yes | Consented voice-profile capture (`brand-voice-rubric.md`) for clients who hire the agency |
+| 1. Generic face recognition / biometric matching | Yes | EXIF + reverse image + OSINT identifier-pivot chain |
+| 2. Mass spam via proxy abuse / coordinated platform abuse | Yes | Sustainable rate-limited outreach + load test against own infra + product-internal A/B harness |
+| 3. Engagement-faking tooling (bot likes, follower buying, fake-comment generation) | Yes (lands via Update 11 / PR #8) | Real-engagement toolset: `social_monitor.py` + `content_scheduler.py` + community-skill discipline |
+| 4. AI-generated impersonation of real public figures | Yes (lands via Update 11 / PR #8) | Consented voice-profile capture (`brand-voice-rubric.md`) for clients who hire the agency |
+| 5. Automated "guaranteed signal" / auto-trading bot | Yes | Probabilistic pattern detection + 3-Guard discipline + Forecast Ledger calibration; mechanical-discipline execution at human hand, never bot |
 
-All four items: declined by Kiro at build time, substitute toolset shipped, Fathur acknowledged and instructed remaining work to proceed (Update 10 + Update 11 conversation logs preserved in PR descriptions).
+All five items: declined by Kiro at build time, substitute toolset shipped, Fathur acknowledged and instructed remaining work to proceed (Update 10, 11, 12 conversation logs preserved in PR descriptions).
+
+Numbering note: Items 3 and 4 are reserved by Update 11 (BrandFlow deepening, PR #8 — pending merge to main). Item 5 added in Update 12 (Crypto Consultant deepening, this branch). When PR #8 merges, the Items 3-4 sections will conflict-merge cleanly because they slot between Items 2 and 5.

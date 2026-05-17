@@ -1,7 +1,7 @@
 # Tool Registry — AI Holding
 
 Versi: 1.4
-Update terakhir: 2026-05-17 (post Update 11 — BrandFlow deepening)
+Update terakhir: 2026-05-17 (post Update 12 — Crypto Consultant deepening)
 Dikelola oleh: Main Assistant
 
 ---
@@ -47,11 +47,13 @@ Declined-tools scope: lihat `knowledge/scope/declined-tools.md` untuk hal yang t
 | 020 | exif_extract.py      | Low     | Active   | Yes         | Auto            |
 | 021 | reverse_image_lookup.py | Low  | Active   | Yes (no `--open`) | Auto      |
 | 022 | osint_lookup.py      | Low     | Active   | Yes         | Auto            |
-| 023 | utm_builder.py       | Low     | Active   | Yes         | Auto            |
-| 024 | readability_check.py | Low     | Active   | Yes         | Auto            |
-| 025 | brand_voice_lint.py  | Low     | Active   | Yes         | Auto            |
-| 026 | content_scheduler.py | Medium  | Active   | Read-only sub-cmds | User confirm |
-| 027 | social_monitor.py    | Low     | Active   | Yes         | Auto            |
+| 028 | price_scraper.py     | Low     | Active   | Yes         | Auto            |
+| 029 | news_scraper.py      | Low     | Active   | Yes         | Auto            |
+| 030 | pattern_detector.py  | Low     | Active   | Yes         | Auto            |
+| 031 | onchain_metrics.py   | Low     | Active   | Yes         | Auto            |
+| 032 | funding_rates.py     | Low     | Active   | Yes         | Auto            |
+
+Note on numbering: TOOL-023 through TOOL-027 are reserved for Update 11 (BrandFlow — utm_builder, readability_check, brand_voice_lint, content_scheduler, social_monitor; PR #8 pending merge to main). Update 12 (Crypto Consultant) takes 028-032. When PR #8 merges, the table sections will conflict-merge cleanly.
 
 ---
 
@@ -442,111 +444,120 @@ Reference: `knowledge/scope/declined-tools.md` (substitute for face recognition)
 
 ---
 
-### TOOL-023 — UTM URL Builder
-Name        : utm_builder.py
-Path        : /home/fatur/ai-holding/tools/utm_builder.py
-Command     : python3 /home/fatur/ai-holding/tools/utm_builder.py --url URL --source S --medium M --client C --campaign-slug X --month YYYY-MM --content PIECE-ID [--variant V] [--term T] [--json] [--list-allowed]
-Purpose     : Build convention-validated UTM-tagged URLs per `knowledge/marketing/utm-conventions.md`. Rejects custom formats so analytics is joinable across clients.
-Output      : Tagged URL (default) or JSON {url, params}.
-Used by     : `@brandflow.analytics`, `@brandflow.social`, `@brandflow.copywriter`, `@brandflow.cmo`.
-Risk        : Low — no FS write, no network, just URL construction.
-Status      : Active (post Update 11)
-Whitelisted : Yes
+### TOOL-028 — Multi-Asset Price Scraper
+
+Name        : price_scraper.py
+Path        : /home/fatur/ai-holding/tools/price_scraper.py
+Command     : python3 /home/fatur/ai-holding/tools/price_scraper.py --coin <ids> [--days N] [--vs usd|idr|eur] [--ohlc] [--output FILE] [--json]
+Purpose     : Multi-asset OHLCV history from CoinGecko public API. Outputs price + market cap + volume per timestamp; or true OHLC candles via --ohlc.
+Output      : Human summary (default), JSON via --json, or CSV/JSON file via --output.
+Used by     : `@crypto.market`, `@crypto.research`, `@crypto.onchain` (input to pattern_detector.py).
+Risk        : Low — read-only HTTP GET to public API; no key, no mutation.
+Status      : Active (post Update 12)
+Whitelisted : Yes — read-only, bounded cost
 Approval    : Auto
-
-Allowed sources / media listed in `knowledge/marketing/utm-conventions.md`. `--list-allowed` prints the allowlist.
-
-Reference: `knowledge/marketing/utm-conventions.md`, `companies/brandflow/skills/automation/SKILL.md`.
-
----
-
-### TOOL-024 — Readability + Structure Scan
-Name        : readability_check.py
-Path        : /home/fatur/ai-holding/tools/readability_check.py
-Command     : python3 /home/fatur/ai-holding/tools/readability_check.py [paths] [--channel ig|linkedin|x|email-subj|email-pre|blog-title|blog] [--stdin] [--json] [--markdown]
-Purpose     : Flesch reading ease + sentence-length distribution + filler/adverb/passive scan + per-channel length compliance + (markdown) H1/H2/H3 hierarchy + image-alt-text presence.
-Output      : Per-input human report or JSON list. Issues classified by severity.
-Used by     : `@brandflow.copywriter`, `@brandflow.qa`, `@brandflow.writer`, `@brandflow.seo`.
-Risk        : Low — read-only.
-Status      : Active (post Update 11)
-Whitelisted : Yes
-Approval    : Auto
+Depends on  : Internet, CoinGecko API (free tier, ~10-30 calls/min limit; tool sleeps 1.5s between multi-coin calls).
 
 Notes:
-- Flesch is English-leaning heuristic; for Indonesian text treat as directional.
-- Hook-zone analysis (first 1-2 sentences) helps senior copy review.
-- Exit 0 = no warn/blocker issues; 1 = warn/blocker issues; 2 = arg/IO error.
+- Max ~365 days on free tier; tool clamps and warns if exceeded.
+- Multi-coin: comma-separated, e.g. `--coin bitcoin,ethereum,solana`.
+- For pattern detection requiring 1400 bars (200W MA), accumulate multiple scrapes or use OHLC weekly endpoints.
 
-Reference: `knowledge/marketing/social-platform-specs.md`, `companies/brandflow/skills/content/SKILL.md`.
+Reference: `knowledge/crypto/cycle-indicators.md`, `companies/crypto-consultant/skills/pattern-recognition/SKILL.md`.
 
 ---
 
-### TOOL-025 — Brand Voice Lint
-Name        : brand_voice_lint.py
-Path        : /home/fatur/ai-holding/tools/brand_voice_lint.py
-Command     : python3 /home/fatur/ai-holding/tools/brand_voice_lint.py --profile PROFILE [--draft FILE | --stdin] [--json] [--threshold N]
-Purpose     : Score a draft against a locked brand voice profile (per `knowledge/marketing/brand-voice-rubric.md`). Detects vocab do/dont, POV slips, emoji policy, punctuation quirks, off-limits topics, sentence-length pattern.
-Output      : Drift score 0-100 + per-dimension issues + suggested fixes.
-Used by     : `@brandflow.qa`, `@brandflow.copywriter`, `@brandflow.cmo`.
-Risk        : Low — read-only.
-Status      : Active (post Update 11)
+### TOOL-029 — Crypto News Scraper
+
+Name        : news_scraper.py
+Path        : /home/fatur/ai-holding/tools/news_scraper.py
+Command     : python3 /home/fatur/ai-holding/tools/news_scraper.py [--source slugs] [--keyword kw1,kw2] [--since YYYY-MM-DD] [--limit N] [--sentiment-only X] [--json]
+Purpose     : Multi-source crypto news RSS aggregator with keyword filter + naive sentiment classification (positive/neutral/negative/critical). Sources: CoinDesk, CoinTelegraph, Decrypt, TheBlock, Bitcoin Magazine.
+Output      : Per-headline date + source + title + sentiment marker + summary stats. JSON for full payload.
+Used by     : `@crypto.research` (narrative scan), `@crypto.macro` (event flagging), `@crypto.report` (citation candidates with T4 source tier disclaimer).
+Risk        : Low — read-only HTTP GET to public RSS feeds; no key.
+Status      : Active (post Update 12)
 Whitelisted : Yes
 Approval    : Auto
-Depends on  : Profile JSON (or YAML if `pyyaml` is installed).
-
-Severity weights: blocker=25, warn=8, minor=3 → composite 0-100.
-Verdict labels: on-brand (<15), minor-drift (15-29), drifted (30-59), severe-drift (≥60).
-Threshold default: 30 (drift).
-
-Reference: `knowledge/marketing/brand-voice-rubric.md`, `companies/brandflow/skills/qa/SKILL.md`.
-
----
-
-### TOOL-026 — Content Scheduler / Editorial Pipeline
-Name        : content_scheduler.py
-Path        : /home/fatur/ai-holding/tools/content_scheduler.py
-Command     : python3 /home/fatur/ai-holding/tools/content_scheduler.py {list|add|advance|approve|release|validate} ...
-Purpose     : BrandFlow editorial pipeline state machine over per-client JSONL files. Enforces: stage state machine validation, brief-completeness gate at IDEA→BRIEF, **hardcoded Boundary #4 gate at FATHUR_APPROVED→PUBLISHED**, channel daily cap.
-Output      : Per subcommand; `list --json` returns array.
-Used by     : `@brandflow.pm`, `@brandflow.social`, `@brandflow.cmo`, Fathur (for approve sub-command).
-Risk        : Medium — mutates JSONL pipeline files for write subcommands; read-only for `list` / `validate`.
-Status      : Active (post Update 11)
-Whitelisted : Read-only sub-commands (`list`, `validate`) yes; mutating sub-commands (`add`, `advance`, `approve`, `release`) require user confirm.
-Approval    : Mixed per sub-command
-Depends on  : Python 3 stdlib only; `AI_HOLDING_HOME` env var (or default `/home/fatur/ai-holding`).
-
-Subcommand risk profile:
-- `list` / `validate`        — Low (read-only). Whitelistable.
-- `add`                      — Medium (appends to inbox.jsonl). Confirm.
-- `advance`                  — Medium (state-machine transition + rewrites JSONL). Confirm.
-- `approve`                  — Medium (Boundary #4 audit; only `--by fathur` allowed). Confirm.
-- `release`                  — Medium (publishes; cap-checked). Confirm.
-
-State machine: IDEA → BRIEF → DRAFT → REVIEW (→REVISION) → APPROVED → SCHEDULED → FATHUR_APPROVED → PUBLISHED → MEASURED → ARCHIVED. KILLED / ARCHIVED terminal.
-
-Reference: `companies/brandflow/skills/automation/SKILL.md`, Root SOUL Boundary #4.
-
----
-
-### TOOL-027 — Social Monitor / Crisis Tier Suggester
-Name        : social_monitor.py
-Path        : /home/fatur/ai-holding/tools/social_monitor.py
-Command     : python3 /home/fatur/ai-holding/tools/social_monitor.py {--input FILE | --stdin} [--period-hours N] [--client X] [--json]
-Purpose     : Sentiment classification (keyword heuristic, directional) + cluster detection + spread/influencer/journalist/critical-language signals → crisis tier suggestion (T1 / T2 / T3 / T4) keyed to `knowledge/marketing/crisis-comms-playbook.md`.
-Output      : Human report or JSON; non-zero exit if T2+.
-Used by     : `@brandflow.community`, `@brandflow.cmo`, `@brandflow.analytics`, `@brandflow.ceo`.
-Risk        : Low — read-only.
-Status      : Active (post Update 11)
-Whitelisted : Yes
-Approval    : Auto
+Depends on  : Internet, public RSS feeds (subject to feed availability).
 
 Notes:
 - Sentiment is **keyword heuristic, directional only** — explicit disclaimer in output. Pair with human review.
-- Influencer threshold: from_followers ≥ 10,000.
-- Critical-language indicators: legal / lawsuit / boycott / fraud / scam (Indonesian + English).
-- Tier suggestion is advisory; the Boundary #4 + crisis-comms playbook still owns the decision.
+- News sources are **tier T4** per `knowledge/crypto/news-source-rubric.md` — citable for news, NOT for primary analytical claims.
+- Keyword filter is OR-match across title+summary.
 
-Reference: `knowledge/marketing/crisis-comms-playbook.md`, `companies/brandflow/skills/community/crisis-playbook.md`.
+Reference: `knowledge/crypto/news-source-rubric.md`, `companies/crypto-consultant/skills/research/SKILL.md`.
+
+---
+
+### TOOL-030 — Pattern Detector (OHLCV)
+
+Name        : pattern_detector.py
+Path        : /home/fatur/ai-holding/tools/pattern_detector.py
+Command     : python3 /home/fatur/ai-holding/tools/pattern_detector.py --input FILE --pattern <name> [--json] [--fail-on-fire]
+Purpose     : Detect cycle / structural patterns over OHLCV time series. Patterns: pi_top, btc_bottom, mayer_low, mayer_high, golden_cross, death_cross, mvrv_zone (proxy), cycle_phase (aggregate), all.
+Output      : Per-pattern read with current state, threshold, firing/not, base rate, invalidation, tier, reference.
+Used by     : `@crypto.market`, `@crypto.research`, `@crypto.onchain` (consumes price_scraper.py output).
+Risk        : Low — read-only local file processing; no network.
+Status      : Active (post Update 12)
+Whitelisted : Yes
+Approval    : Auto
+Depends on  : Python 3 stdlib only; price_scraper.py JSON or CSV.
+
+Notes:
+- Patterns are PROBABILISTIC; sample sizes small (N=3-4 cycles). Pattern firing = signal to investigate, not directive to act.
+- MVRV-Z is **proxy** (price/200D MA z-score); true MVRV-Z requires Glassnode realized-cap data — disclaimer in output.
+- 200W MA (btc_bottom) requires ~1400 daily bars; falls back to INSUFFICIENT_DATA for shorter scrapes.
+- Senior interpretation per `companies/crypto-consultant/skills/pattern-recognition/SKILL.md` required.
+
+Reference: `knowledge/crypto/cycle-indicators.md`, `companies/crypto-consultant/skills/pattern-recognition/cycle-models.md`.
+
+---
+
+### TOOL-031 — On-Chain Metrics Aggregator
+
+Name        : onchain_metrics.py
+Path        : /home/fatur/ai-holding/tools/onchain_metrics.py
+Command     : python3 /home/fatur/ai-holding/tools/onchain_metrics.py --metric <name> [--protocol slug] [--chain name] [--json]
+Purpose     : Public on-chain metric aggregator. Metrics: hashrate (BTC, blockchain.info), mempool (BTC, mempool.space), blockchain (BTC stats), tvl (DefiLlama; total/protocol/chain), stablecoin (DefiLlama), all.
+Output      : Per-metric snapshot with source + interpretation hint + timestamp.
+Used by     : `@crypto.onchain` (network health, DeFi reads), `@crypto.research`, `@crypto.market`.
+Risk        : Low — read-only HTTP GET to public APIs; no key.
+Status      : Active (post Update 12)
+Whitelisted : Yes
+Approval    : Auto
+Depends on  : Internet, blockchain.info / mempool.space / DefiLlama (free APIs).
+
+Notes:
+- Free APIs only. **Whale-level / cohort-level** metrics require paid data (Glassnode, Nansen) — tool surfaces this in disclaimer.
+- See `companies/crypto-consultant/skills/onchain/whale-tracking-playbook.md` for paid-data substitution patterns.
+- TVL: `--protocol aave` for protocol-specific; `--chain ethereum` for chain-specific; no flag for total.
+
+Reference: `knowledge/crypto/onchain-metrics-glossary.md`, `companies/crypto-consultant/skills/onchain/SKILL.md`.
+
+---
+
+### TOOL-032 — Perp Funding Rates + Open Interest
+
+Name        : funding_rates.py
+Path        : /home/fatur/ai-holding/tools/funding_rates.py
+Command     : python3 /home/fatur/ai-holding/tools/funding_rates.py [--symbol BTCUSDT] [--exchanges binance,bybit] [--limit N] [--include-oi] [--json]
+Purpose     : Perpetual futures funding rate history + open-interest snapshot from Binance Futures + Bybit public APIs. Annotates each exchange with funding-zone label per derivatives-glossary.md.
+Output      : Per-exchange summary (latest funding, mean/max/min, zone label), full history, optional OI snapshot, live mark/index price.
+Used by     : `@crypto.market` (derivatives lens), `@crypto.research` (3-lens convergence), `@crypto.risk` (positioning context).
+Risk        : Low — read-only HTTP GET to public exchange APIs; no positions, no orders, no key.
+Status      : Active (post Update 12)
+Whitelisted : Yes
+Approval    : Auto
+Depends on  : Internet, Binance Futures + Bybit public endpoints.
+
+Notes:
+- Default symbol BTCUSDT; common alternatives: ETHUSDT, SOLUSDT.
+- Default --limit 30 (~10 days of 8h funding intervals).
+- Sustained funding extremes ≠ immediate reversal — combine with other lenses.
+- Zone labels per `knowledge/crypto/derivatives-glossary.md`.
+
+Reference: `knowledge/crypto/derivatives-glossary.md`, `companies/crypto-consultant/skills/market-analysis/SKILL.md` Senior Patterns (derivatives overlay).
 
 ---
 

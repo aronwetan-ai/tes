@@ -113,3 +113,123 @@ Inherits Crypto Consultant SOUL (analyst-cautious, data-first, skeptical, separa
 - `companies/crypto-consultant/SOUL.md`
 - `companies/crypto-consultant/agents/research.md`
 - `knowledge/crypto/crypto-research-framework.md`
+
+
+---
+
+## Senior Patterns (Deep Dive) — Update 12
+
+The senior research-synthesis playbook. Synthesis is where individual lens reads (price, on-chain, derivatives, macro) become a coherent view — and where most amateur research falls apart by stitching signals that disagree into a forced conclusion.
+
+### 1. The 3-Lens Convergence Test
+
+Before shipping any multi-week view, run the convergence test:
+
+```
+Lens 1 — PRICE / TA          (skills/market-analysis + pattern_detector.py)
+Lens 2 — ON-CHAIN            (skills/onchain + onchain_metrics.py)
+Lens 3 — DERIVATIVES         (funding_rates.py + market-analysis)
+
+For each lens, what does it say? bull / sideways / bear?
+
+CONVERGENCE (3/3 agree)         → high-confidence single thesis
+PARTIAL (2/3 agree)             → moderate-confidence with named caveat
+DIVERGENCE (1/1/1 each different) → "mixed signal" IS the read
+```
+
+Senior synthesis explicitly **labels** the convergence state. Junior synthesis hides divergence by leaning on the lens that agrees with the analyst's prior.
+
+Plus the two ambient layers:
+- **Macro liquidity** — the regime under which all three lenses operate.
+- **News / narrative** — what's actually moving sentiment this week.
+
+### 2. The Forecast Ledger
+
+Every multi-week view goes into `companies/crypto-consultant/MEMORY.md` under `[FORECAST LEDGER]`:
+
+```
+[FORECAST LEDGER ENTRY]
+ID:               FL-2026-05-17-001
+Issued:           2026-05-17 09:00 UTC
+Issuer:           @crypto.research
+Horizon:          90 days (decay 2026-08-15)
+Cycle phase:      Phase 3 — Markup post-halving (confidence: high)
+Lens convergence: PARTIAL — price+derivatives bullish, on-chain mixed
+View summary:    Bull 45 / Sideways 35 / Bear 20
+Key levels:       BTC bull >$76K confirms; bear <$58K invalidates
+Key catalysts:    Fed June meeting; ETF flow re-acceleration
+Invalidation:     Sustained <$58K with on-chain net inflow >50k BTC
+                  to exchanges over 14d
+Reviewed at:      Post-event refresh required
+```
+
+Six months of ledger entries reveal:
+- Which agents call cycles well.
+- Which patterns the team over-trusts.
+- Where the team's calibration is honest vs hopeful.
+
+This is the **single biggest separator** between honest research and selective memory.
+
+### 3. Calibration Discipline (Brier-Style Scoring)
+
+For each forecast in the ledger, score after horizon expires:
+
+```
+Stated probability of outcome that occurred:
+  Bull called at 45% → bull happened     → score: 0.45 (low Brier loss)
+  Bull called at 90% → bull didn't happen → score: 0.10 (high Brier loss)
+```
+
+Lower Brier = better calibrated. Track quarterly. Discuss in monthly research review:
+- "Are we systematically over-confident on bull calls?" (Common bias.)
+- "Are bear calls under-weighted because they're unpopular?" (Also common.)
+
+Reference: `knowledge/crypto/forecast-evaluation.md`.
+
+### 4. Synthesis Output Template (Senior)
+
+```
+[SYNTHESIS — Crypto Consultant Research]
+Forecast ID:        FL-YYYY-MM-DD-NNN
+Issued:             YYYY-MM-DD HH:MM TZ
+Decay window:       N days
+Cycle phase read:   <phase> — confidence <H/M/L>
+
+[LENS READS]
+  Price/TA:         <bull/sideways/bear> — basis: ...
+  On-chain:         <bull/sideways/bear> — basis: ...
+  Derivatives:      <bull/sideways/bear> — basis: ...
+  Macro liquidity:  <expanding/neutral/contracting> — basis: ...
+  Narrative:        <dominant story> — strength: ...
+
+[CONVERGENCE STATE]   3/3 agree | 2/1 split | full divergence
+
+[6-LAYER OUTPUT]
+[FACT]
+[SOURCE]
+[TREND]
+[INTERPRET]
+[SCENARIO] (bear first; ranges + probabilities)
+[RISK NOTE]
+
+[INVALIDATION]      Specific observable conditions
+[REFRESH TRIGGER]   What would force early review before decay
+```
+
+### 5. Anti-Patterns Senior Synthesis Avoids
+
+- **Stitching disagreeing lenses into a forced thesis.** Mixed signal is a real conclusion.
+- **Using single-number price targets.** Range required. "$100K" ≠ "$90K-$110K with 35% likelihood".
+- **Quoting prior cycles as guarantees.** Cycles rhyme; don't repeat. Always state "if pattern repeats" caveat.
+- **Forecast without invalidation.** Without it, it's not a forecast — it's hope.
+- **Forgetting decay.** Stale views poison new synthesis if not flagged.
+- **Skipping the ledger.** Untracked forecasts produce dishonest self-assessment.
+- **Confirmation bias by source selection.** "I read 3 bullish takes; consensus is bullish" — but 3 bears were filtered out unconsciously.
+
+### Reference
+
+- `knowledge/crypto/scenario-modeling.md` (Update 12).
+- `knowledge/crypto/forecast-evaluation.md` (Update 12).
+- `knowledge/crypto/four-year-cycle.md` (Update 12).
+- `companies/crypto-consultant/skills/pattern-recognition/SKILL.md` (Update 12).
+- `tools/pattern_detector.py` (Update 12).
