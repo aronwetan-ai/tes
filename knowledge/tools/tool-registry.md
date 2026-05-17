@@ -51,9 +51,10 @@ Declined-tools scope: lihat `knowledge/scope/declined-tools.md` untuk hal yang t
 | 029 | news_scraper.py      | Low     | Active   | Yes         | Auto            |
 | 030 | pattern_detector.py  | Low     | Active   | Yes         | Auto            |
 | 031 | onchain_metrics.py   | Low     | Active   | Yes         | Auto            |
-| 032 | funding_rates.py     | Low     | Active   | Yes         | Auto            |
+|| 032 | funding_rates.py     | Low     | Active   | Yes         | Auto            |
+|| 033 | llm_client.py        | Medium  | Active   | No          | User confirm    |
 
-Note on numbering: TOOL-023 through TOOL-027 are reserved for Update 11 (BrandFlow — utm_builder, readability_check, brand_voice_lint, content_scheduler, social_monitor; PR #8 pending merge to main). Update 12 (Crypto Consultant) takes 028-032. When PR #8 merges, the table sections will conflict-merge cleanly.
+Note on numbering: TOOL-023 through TOOL-027 are reserved for Update 11 (BrandFlow — utm_builder, readability_check, brand_voice_lint, content_scheduler, social_monitor; PR #8 pending merge to main). Update 12 (Crypto Consultant) takes 028-032. Update 13 (SUPERAGENT v2 cherry-pick) takes 033. When PR #8 merges, the table sections will conflict-merge cleanly.
 
 ---
 
@@ -558,6 +559,54 @@ Notes:
 - Zone labels per `knowledge/crypto/derivatives-glossary.md`.
 
 Reference: `knowledge/crypto/derivatives-glossary.md`, `companies/crypto-consultant/skills/market-analysis/SKILL.md` Senior Patterns (derivatives overlay).
+
+---
+
+### TOOL-033 — LLM Multi-Provider Client
+
+Name        : llm_client.py
+Path        : /home/fatur/ai-holding/tools/llm_client.py
+Command     : python3 /home/fatur/ai-holding/tools/llm_client.py --provider <name> --message "..." [--system "..."] [--model override] [--json]
+Purpose     : Unified client untuk 6 LLM providers (Anthropic, OpenAI, Groq, Kimi, DeepSeek, OpenRouter)
+Output      : LLM response text (default) atau JSON dengan metadata
+Used by     : @nexusai.ml, @nexusai.backend, @brandflow.copywriter, @crypto.research, all agents needing inference
+Risk        : Medium — network call to external API, requires API key, token cost
+Status      : Active (post Update 13 — SUPERAGENT v2 cherry-pick)
+Whitelisted : No — external API call, requires user confirm + API key setup
+Approval    : User confirm (first time setup); auto after env vars configured
+Depends on  : Internet, requests library, API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY, GROQ_API_KEY, KIMI_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY)
+
+Providers:
+- anthropic: Claude Sonnet 4 (best reasoning)
+- openai: GPT-4o (general purpose)
+- groq: Llama 3.1 70B (ultra-fast)
+- deepseek: DeepSeek Chat (cost-effective)
+- kimi: Moonshot v1 128k (long context)
+- openrouter: Multi-model gateway (flexibility)
+
+Setup:
+```bash
+# Create .env in workspace root
+export ANTHROPIC_API_KEY=sk-ant-...
+export OPENAI_API_KEY=sk-...
+export GROQ_API_KEY=gsk_...
+# etc.
+```
+
+CLI examples:
+```bash
+python tools/llm_client.py --provider anthropic --message "Halo"
+python tools/llm_client.py --provider groq --system "Anda asisten Indonesia" --message "Apa kabar?"
+python tools/llm_client.py --provider deepseek --message "..." --json
+```
+
+Python import:
+```python
+from tools.llm_client import call_llm
+result = call_llm("Halo", provider="anthropic")
+```
+
+Reference: `knowledge/ml/llm-providers.md` (provider selection guide), `update/v2/openclaw/skills/m7.md` (source).
 
 ---
 
