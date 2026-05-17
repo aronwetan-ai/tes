@@ -1,5 +1,13 @@
 # AI Holding Main Context
 
+Read on startup, in order:
+1. /home/fatur/ai-holding/SOUL.md      (root constitution — never override)
+2. /home/fatur/ai-holding/MAIN_SOUL.md (main assistant personality & behavior)
+3. /home/fatur/ai-holding/AGENTS.md    (agent registry)
+4. /home/fatur/ai-holding/COMMANDS.md  (command routing)
+5. /home/fatur/ai-holding/MEMORY.md    (durable memory)
+
+
 This folder is the operating context for Fathur's AI holding system.
 
 The AI holding system is controlled by one Main Assistant through Hermes.
