@@ -1,9 +1,85 @@
 # AI Holding Project Summary
 
-Tanggal: 17 Mei 2026 — Update 3
+Tanggal: 17 Mei 2026 — Update 4
 Owner: Fathur
 Environment: WSL2 + Hermes + Telegram Bot + Online Provider API Key
 Repository: aronwetan-ai/tes
+
+---
+
+## Update 4 — Tier 2 Company SOULs (17 Mei 2026)
+
+Branch: `feat/tier2-company-souls`
+
+### A. Tujuan
+
+Sebelum Update 4, ketiga `companies/*/SOUL.md` masih copy-paste boilerplate dari template lama — agent NexusAI, BrandFlow, dan Crypto Consultant punya "jiwa" yang identik. Update ini memberi setiap perusahaan **kepribadian, prinsip, dan decision authority** yang spesifik untuk domainnya.
+
+### B. Yang Dieksekusi
+
+3 file SOUL ditulis ulang dari nol dengan struktur Tier-2 yang konsisten:
+
+```
+companies/nexusai/SOUL.md
+  Nuansa: engineering-precise, pragmatic, zero fluff.
+  - 7 engineering principles (working code beats perfect, boring tech, dst).
+  - 7-step operating behavior untuk setiap task.
+  - Decision authority eksplisit: CEO / CTO / PM / Specialist (boleh decide vs harus escalate).
+  - Cross-company collaboration: kapan loop in BrandFlow / Crypto.
+
+companies/brandflow/SOUL.md
+  Nuansa: creative-confident, audience-aware, sharp copy, slightly playful.
+  - 7 marketing principles (audience first, hook earns the read, dst).
+  - 6-step operating behavior dengan emphasis pada KPI.
+  - Decision authority + Boundary #4 reminder (BrandFlow paling sering brush dengan rule "tidak bicara atas nama Fathur di publik").
+  - Memory discipline: hanya simpan campaign decisions, bukan setiap draft.
+
+companies/crypto-consultant/SOUL.md
+  Nuansa: analyst-cautious, data-first, skeptical, bedakan fakta vs opini.
+  - 7 research principles (fact > interpretation > scenario, no determinism, source everything).
+  - Decision authority + Boundary #4 amplified (financial advice posture).
+  - Wajib disclaimer pada @crypto.report output.
+  - Time-stamp & source citation non-negotiable.
+```
+
+### C. Struktur Konsisten Tiap SOUL
+
+Setiap Tier-2 SOUL punya 14 section dengan urutan sama:
+
+1. Inheritance Note (eksplisit warisi Root SOUL)
+2. Identity (siapa perusahaan ini, siapa BUKAN)
+3. Culture & Tone (bagaimana suara perusahaan, bagaimana TIDAK)
+4. Principles (non-negotiable)
+5. Operating Behavior (langkah default per task)
+6. Decision Authority (boleh decide vs harus escalate ke Fathur)
+7. Boundary Reminder (jika domain rawan)
+8. Memory Discipline
+9. Tool Discipline
+10. Knowledge Loading (mandatory file order)
+11. What This Company Is NOT
+12. Cross-Company Collaboration
+13. Loyalty Reminder (diulang agar tidak drift)
+
+### D. Dampak Operasional
+
+Sebelum:
+- @nexusai.ceo dan @brandflow.ceo dan @crypto.ceo menjawab dengan tone yang sama.
+- Tidak ada kejelasan kapan CEO boleh decide sendiri vs harus tanya Fathur.
+- Tidak ada kejelasan boundary spesifik per domain (mis. financial advice di Crypto).
+
+Sesudah:
+- Setiap perusahaan punya tone, principles, dan rules sendiri yang spesifik.
+- Decision authority terstruktur: CEO / VP / PM / Specialist masing-masing tahu otoritas dan escalation path.
+- Boundary #4 dari Root SOUL diamplify khusus di BrandFlow & Crypto (domain paling rawan).
+- Cross-company collaboration jelas: NexusAI tidak bikin copy, BrandFlow tidak invent fakta crypto, dst.
+
+### E. Yang Belum Selesai (untuk PR berikutnya)
+
+1. **Tier 3 Agent SOULs** — minimal untuk role utama (CEO, CTO/CMO/Research, dan 1 spesialis per company).
+2. **Specialize skill files** — 23 dari 24 SKILL.md masih boilerplate.
+3. **Fix memory reference inkonsistensi** + update root MEMORY.md.
+4. **Task Logger JSONL** — schema + writer + filter.
+5. **Tools tambahan** — btc_price.py, news_sentiment.py.
 
 ---
 
@@ -336,7 +412,14 @@ Template di `templates/company/` sudah:
 - COMMANDS.md pakai `@company keyword` namespacing.
 - SOUL.md pakai Tier-2 inheritance design.
 
-### 4.10 Test Integrasi Berhasil
+### 4.10 Tier 2 Company SOULs (post Update 4)
+Setiap perusahaan punya SOUL.md spesifik dengan:
+- Identity, culture & tone unik per domain.
+- Principles non-negotiable per perusahaan.
+- Decision authority eksplisit (CEO/VP/PM/Specialist).
+- Boundary reminder spesifik domain (terutama BrandFlow & Crypto).
+
+### 4.11 Test Integrasi Berhasil
 - @crypto.research jalankan fear_greed.py + output 6 lapisan.
 - @nexusai.backend buat desain API terstruktur.
 - @brandflow.copywriter buat caption Instagram dengan 2 variasi tone.
@@ -383,30 +466,26 @@ Knowledge:
 
 ## 7. Yang Perlu Dilakukan Dalam Waktu Dekat (Updated)
 
-### Prioritas 1 — Tier 2 Company SOULs
-Tulis SOUL khas untuk NexusAI, BrandFlow, Crypto Consultant.
-Inheritance + budaya unik per perusahaan.
-
-### Prioritas 2 — Tier 3 Agent SOULs
+### Prioritas 1 — Tier 3 Agent SOULs (NEXT)
 Minimal untuk: @nexusai.ceo, @nexusai.cto, @brandflow.cmo, @brandflow.copywriter,
 @crypto.research, @crypto.risk.
 
-### Prioritas 3 — Specialize Skill Files
+### Prioritas 2 — Specialize Skill Files
 Saat ini 23 dari 24 SKILL.md generik. Buang yang tidak relevan, perdalam yang relevan.
 
-### Prioritas 4 — Fix Memory Reference
+### Prioritas 3 — Fix Memory Reference + Update Root MEMORY.md
 `MAIN.md` baca `MEMORY.md` (root), `AGENTS.md` baca `memory/global.md`.
 Perlu klarifikasi peran masing-masing dan update `MEMORY.md` root agar sinkron
-dengan keputusan terbaru.
+dengan keputusan terbaru (SOUL hierarchy + knowledge management + Tier 2 SOULs).
 
-### Prioritas 5 — Task Logger JSONL
+### Prioritas 4 — Task Logger JSONL
 Schema + writer + filter untuk `companies/*/tasks/inbox.jsonl`.
 
-### Prioritas 6 — Tools Tambahan
+### Prioritas 5 — Tools Tambahan
 - `btc_price.py` (PLANNED di registry).
 - `news_sentiment.py` (PLANNED di registry).
 
-### Prioritas 7 — Hermes Service Hardening
+### Prioritas 6 — Hermes Service Hardening
 Cek `hermes-gateway.service` warning bersih, no double process, restart membaca config.
 
 ---
@@ -419,8 +498,8 @@ Done — natural command, routing, pseudo-mention konsisten.
 ### Tahap B — Bangun Knowledge Management ✓ (selesai Update 3)
 Done — folder lengkap, SOP per domain, tool registry, memory rules.
 
-### Tahap C — Buat Tier 2/3 SOULs (NEXT)
-Belum — masih boilerplate generik.
+### Tahap C — Buat Tier 2/3 SOULs
+Tier 2 ✓ (Update 4). Tier 3 belum.
 
 ### Tahap D — Specialize Skills
 Belum — masih boilerplate.
@@ -450,6 +529,7 @@ Yang sudah siap:
 - Direct agent routing
 - Crypto Fear & Greed tool
 - SOUL Tier 0 + Tier 1
+- SOUL Tier 2 (semua 3 perusahaan, post Update 4)
 - Knowledge management lengkap (8 file aktif)
 - Template Tier-2 ready
 - Repo bersih (no .bak, no Zone.Identifier)
@@ -457,10 +537,10 @@ Yang sudah siap:
 
 Yang belum:
 ```
-- Tier 2 Company SOULs (per perusahaan)
 - Tier 3 Agent SOULs
 - Skill files spesifik (saat ini boilerplate)
 - Task logger JSONL writer
+- Root MEMORY.md update agar sinkron dengan keputusan terbaru
 - btc_price.py
 - news_sentiment.py
 - Whitelist tool read-only
@@ -470,14 +550,14 @@ Yang belum:
 
 ## 10. Next Immediate Action
 
-Setelah Update 3 (Quick Wins) selesai, langkah berikutnya:
+Setelah Update 4 (Tier 2 Company SOULs) selesai, langkah berikutnya:
 
 ```
-1. Tier 2 Company SOULs — NexusAI, BrandFlow, Crypto Consultant.
-2. Tier 3 Agent SOULs — minimal untuk role utama tiap perusahaan.
-3. Specialize skill files per perusahaan.
-4. Fix memory reference inkonsistensi.
-5. Task logger JSONL implementation.
+1. Tier 3 Agent SOULs — minimal untuk 6 role utama tiap perusahaan.
+2. Specialize skill files per perusahaan.
+3. Fix memory reference + update root MEMORY.md.
+4. Task logger JSONL implementation.
+5. Tools tambahan: btc_price.py, news_sentiment.py.
 ```
 
 ---
@@ -487,8 +567,8 @@ Setelah Update 3 (Quick Wins) selesai, langkah berikutnya:
 Gunakan prompt ini ke Hermes / Kiro jika ingin melanjutkan:
 
 ```text
-Baca summary.md (Update 3 section) lalu lanjutkan dari "Next Immediate Action".
-Mulai dari Tier 2 Company SOULs satu per satu.
+Baca summary.md (Update 4 section terbaru) lalu lanjutkan dari "Next Immediate Action".
+Mulai dari Tier 3 Agent SOULs untuk role utama (CEO, CTO/CMO/Research, dan 1 spesialis per company).
 Pelan-pelan, satu tahap per response, tunggu konfirmasi sebelum lanjut.
 ```
 
@@ -498,7 +578,8 @@ Pelan-pelan, satu tahap per response, tunggu konfirmasi sebelum lanjut.
 
 | Branch                                          | Status   | Isi |
 |-------------------------------------------------|----------|-----|
-| `main`                                          | base     | Semua progress sebelum Update 3 |
-| `chore/quickwins-cleanup-and-knowledge-fix`     | active   | Update 3 — cleanup + knowledge + template |
+| `main`                                          | base     | Update 3 sudah merged (PR #1) |
+| `chore/quickwins-cleanup-and-knowledge-fix`     | merged   | Update 3 — cleanup + knowledge + template |
+| `feat/tier2-company-souls`                      | active   | Update 4 — Tier 2 SOULs untuk 3 perusahaan |
 
-Setelah branch ini di-merge, lanjut ke branch berikutnya untuk Tier 2/3 SOULs.
+Setelah branch ini di-merge, lanjut ke branch berikutnya untuk Tier 3 Agent SOULs atau Task Logger.
