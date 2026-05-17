@@ -1,7 +1,7 @@
 # Tool Registry — AI Holding
 
-Versi: 1.0  
-Update terakhir: 2026-05-17  
+Versi: 1.1
+Update terakhir: 2026-05-17 (post Update 8 — Task Logger JSONL)
 Dikelola oleh: Main Assistant  
 
 ---
@@ -75,6 +75,80 @@ Used by     : Main Assistant
 Risk        : Medium — membuat file/folder baru
 Status      : Active
 Approval    : Perlu konfirmasi user sebelum dijalankan
+
+---
+
+### TOOL-005 — Task Logger: Create Task
+Name        : log_task.py
+Path        : /home/fatur/ai-holding/bin/log_task.py
+Command     : python3 /home/fatur/ai-holding/bin/log_task.py --company <slug> --to <@agent> --task "<desc>" [--priority HIGH] [--context '{}']
+Purpose     : Append task baru ke companies/<co>/tasks/inbox.jsonl + audit log
+Output      : Task entry JSON (id, status NEW, timestamps UTC) atau error code 2/3
+Used by     : Main Assistant, semua agent yang membuat task delegasi
+Risk        : Medium — menulis ke inbox.jsonl + logs.jsonl
+Status      : Active
+Approval    : Tidak perlu (filter rules sudah di-enforce di script)
+Depends on  : Python 3, AI_HOLDING_HOME (optional env)
+
+Wrapper:
+- bin/log-task.sh — bash wrapper 3-arg ergonomis (untuk path standar).
+
+---
+
+### TOOL-006 — Task Logger: Update Status
+Name        : update_task.py
+Path        : /home/fatur/ai-holding/bin/update_task.py
+Command     : python3 /home/fatur/ai-holding/bin/update_task.py --company <slug> --id T001 --status <STATUS> [--actor <@agent>] [--note "..."]
+Purpose     : Transition status existing task (state machine validated) + audit
+Output      : Updated task entry JSON atau error code 2 (illegal transition / not found)
+Used by     : Agent yang mengerjakan / menutup task
+Risk        : Medium — rewrites inbox.jsonl atomically + appends to logs.jsonl
+Status      : Active
+Approval    : Tidak perlu (state machine guards)
+
+State machine:
+  NEW → IN_PROGRESS → DONE
+  NEW → IN_PROGRESS → FAILED → RETRY → IN_PROGRESS → DONE
+  NEW / IN_PROGRESS / FAILED / RETRY → CANCELLED
+
+---
+
+### TOOL-007 — Task Logger: List & Filter
+Name        : list_tasks.py
+Path        : /home/fatur/ai-holding/bin/list_tasks.py
+Command     : python3 /home/fatur/ai-holding/bin/list_tasks.py --company <slug> [--status X] [--agent @x] [--priority HIGH] [--active-only] [--format table|json|jsonl]
+Purpose     : Filter & list tasks dari inbox.jsonl
+Output      : Table (default) / JSON array / JSONL stream
+Used by     : Main Assistant (recap, status check), agent inbox pull
+Risk        : Low — read-only
+Status      : Active
+Approval    : Tidak perlu
+
+---
+
+### TOOL-008 — Task Logger: Agent Message
+Name        : log_message.py
+Path        : /home/fatur/ai-holding/bin/log_message.py
+Command     : python3 /home/fatur/ai-holding/bin/log_message.py --company <slug> --from <@agent> --to <@agent> --message "..." [--ref-task T001]
+Purpose     : Append agent-to-agent durable message ke messages.jsonl
+Output      : Message entry JSON
+Used by     : Agent yang hand-off / status report durable antar agent
+Risk        : Medium — menulis ke messages.jsonl
+Status      : Active
+Approval    : Tidak perlu (min 4-char filter)
+
+---
+
+### TOOL-009 — Task Logger: Shared Library
+Name        : task_logger.py
+Path        : /home/fatur/ai-holding/bin/task_logger.py
+Command     : (tidak dipanggil langsung)
+Purpose     : Shared schema, validation, I/O untuk TOOL-005..008
+Used by     : log_task.py, update_task.py, list_tasks.py, log_message.py
+Risk        : N/A (library)
+Status      : Active
+
+Reference: knowledge/agent-design/task-logger-rules.md untuk schema, state machine, filter rules.
 
 ---
 

@@ -29,6 +29,19 @@ Inherits NexusAI SOUL (engineering-precise, pragmatic). Boring tech. Resumable. 
 5. **Logged**: every step writes to a log line. No silent failures.
 6. **Avoid over-engineering**: if a 50-line script works, don't reach for Airflow.
 
+## File Structure (Authoritative)
+
+Reality di repo (lihat `companies/<co>/tasks/`):
+
+| File | Peran | Format |
+|---|---|---|
+| `inbox.jsonl` | **Single source of truth** — semua task. Status field membedakan. | Task entry per line |
+| `logs.jsonl` | **Append-only audit log** — setiap CREATE / UPDATE state transition. | Audit entry per line |
+| `messages.jsonl` | Agent-to-agent durable message. | Message entry per line |
+| `recap.jsonl` | Periodic summary — diisi Recap Manager. | Recap entry per line |
+
+Tidak pakai pattern `inbox / active / done` 3-file move. Alasan: idempoten + tidak ada race condition.
+
 ## Default JSONL Task Schema
 
 ```json
@@ -50,6 +63,44 @@ Status transitions:
 - NEW → IN_PROGRESS → DONE
 - NEW → IN_PROGRESS → FAILED → RETRY → IN_PROGRESS → DONE
 - NEW → CANCELLED (with reason)
+
+State machine validated by `bin/update_task.py`. DONE / CANCELLED adalah terminal — kalau task perlu dikerjakan ulang, buat task baru dengan `context.parent_id`.
+
+## Implementasi (Production Scripts)
+
+Semua script di `bin/`. Detail rules: `knowledge/agent-design/task-logger-rules.md`.
+
+| Script | Pakai untuk |
+|---|---|
+| `bin/log_task.py` | Buat task baru. Auto ID `T###` per-company, append ke `inbox.jsonl` + audit ke `logs.jsonl`. |
+| `bin/log-task.sh` | Wrapper bash 3-arg ergonomis di atas `log_task.py`. |
+| `bin/update_task.py` | Transition status (validasi state machine + audit). |
+| `bin/list_tasks.py` | Filter & list (by company, agent, status, priority, format: table/json/jsonl). |
+| `bin/log_message.py` | Append agent-to-agent message ke `messages.jsonl`. |
+| `bin/task_logger.py` | Shared library — schema, validation, I/O. **Tidak dipanggil langsung.** |
+
+Workflow standard NexusAI:
+
+```bash
+# Fathur delegasi ke @nexusai.backend
+bin/log-task.sh nexusai @nexusai.backend "Design REST API for user-service" HIGH
+
+# Backend pull list
+bin/list_tasks.py --company nexusai --agent @nexusai.backend --active-only
+
+# Backend mulai
+bin/update_task.py --company nexusai --id T001 --status IN_PROGRESS --actor @nexusai.backend
+
+# Selesai + hand-off
+bin/update_task.py --company nexusai --id T001 --status DONE --actor @nexusai.backend --note "PR #12 merged"
+bin/log_message.py --company nexusai --from @nexusai.backend --to @nexusai.devops \
+  --message "user-service ready, deploy staging" --ref-task T001
+```
+
+Semua script:
+- Read `AI_HOLDING_HOME` env var; default fallback walk-up dari script location.
+- Exit code 0 = OK, 2 = schema/transition error, 3 = I/O error.
+- Append idempoten; logs.jsonl immutable / append-only.
 
 ## Output Format
 
@@ -85,4 +136,7 @@ For one-shot script:
 ## Reference
 
 - `knowledge/agent-design/tool-use-rules.md`
-- `bin/create-company.sh` (existing example)
+- `knowledge/agent-design/task-logger-rules.md` — schema, state machine, filter rules untuk Task Logger.
+- `knowledge/tools/tool-registry.md` — TOOL-005..009 untuk script Task Logger.
+- `bin/create-company.sh` (existing example).
+- `bin/log_task.py` / `bin/update_task.py` / `bin/list_tasks.py` / `bin/log_message.py`.

@@ -1,7 +1,7 @@
 # MEMORY.md — AI Holding Strategic Memory
 
-Versi: 2.0
-Update terakhir: 2026-05-17 (post Update 6)
+Versi: 2.1
+Update terakhir: 2026-05-17 (post Update 8 — Task Logger JSONL)
 Owner: Fathur
 Scope: Holding-level strategic state. **Read this at session start.**
 
@@ -51,10 +51,11 @@ Inheritance: Root → Company → Agent. Konflik prinsip → atas menang. Konfli
 2. **Pseudo-mention routing** — `@company` dan `@company.agent`. Slash command `/company` ditolak Hermes.
 3. **Companies isolated** — setiap perusahaan punya MEMORY.md sendiri, tidak boleh dicampur.
 4. **Knowledge compact** — Markdown, ringkas, bukan article dump.
-5. **Tasks pakai JSONL** — schema sudah didefinisi di `companies/nexusai/skills/automation/SKILL.md`.
+5. **Tasks pakai JSONL** — schema sudah didefinisi di `companies/nexusai/skills/automation/SKILL.md`. **Implementasi production di `bin/log_task.py`, `update_task.py`, `list_tasks.py`, `log_message.py` (post Update 8).**
 6. **Knowledge management dibangun manual** oleh Fathur, bukan delegated penuh ke Hermes.
 7. **Tool risk levels** — Low (read-only) tidak butuh approval; Medium butuh konfirmasi; High wajib konfirmasi eksplisit.
 8. **Boundary #4 amplified** untuk role rawan (BrandFlow community, Crypto onchain, Crypto risk, Crypto reporting).
+9. **Task Logger model**: single `inbox.jsonl` + status field (bukan 3-file move pattern). Append-only `logs.jsonl` untuk audit. State machine eksplisit dengan transisi yang divalidasi script.
 
 ---
 
@@ -80,7 +81,11 @@ AI Holding Workspace (~/ai-holding)
 │ tools/ (1 active: fear_greed.py)       │
 │ tasks/ (company-index.jsonl)            │
 │ memory/ (global.md — operational log)  │
-│ bin/ (create-company.sh)                │
+│ bin/ (create-company.sh,                │
+│       log_task.py, update_task.py,      │
+│       list_tasks.py, log_message.py,    │
+│       task_logger.py [lib],             │
+│       log-task.sh)                      │
 │ templates/ (company scaffold)           │
 └─────────────────────────────────────────┘
 ```
