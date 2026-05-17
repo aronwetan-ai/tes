@@ -1,8 +1,8 @@
 # Declined Tools — Scope Documentation
 
-Versi: 1.0
-Update terakhir: 2026-05-17 (Update 10 — NexusAI deepening)
-Status: Authoritative reference for what NexusAI / AI Holding **does NOT build**, regardless of framing.
+Versi: 1.1
+Update terakhir: 2026-05-17 (Update 11 — BrandFlow deepening; Items 3 + 4 added)
+Status: Authoritative reference for what NexusAI / BrandFlow / AI Holding **does NOT build**, regardless of framing.
 Audience: Future agents + Fathur + future operators.
 
 ---
@@ -91,6 +91,80 @@ These three workflows cover essentially all legitimate operational needs that a 
 
 ---
 
+## Item 3 — Engagement-Faking Tooling (Bot Likes / Follower Buying / Fake-Comment Generation)
+
+### Requested
+During the BrandFlow deepening discussion (Update 11), the implicit-but-unstated request lurking in any agency-context conversation: tools to inflate engagement metrics on owned or client accounts. Bot-like generation, follower buying integration, fake-comment producers, view-count inflation against the platforms' own systems.
+
+### Declined
+- Engagement faking violates every major platform's terms of service. Detection is increasingly automated and cross-platform; once flagged, accounts are punished for months or permanently.
+- An agency caught faking engagement on a client account does not just lose that client — the agency's whole roster reads it as "you might be doing this on my account too."
+- Faked engagement looks plausible to the client for ~30-60 days, then the conversion-rate math breaks the illusion: 30k followers, 5 sales = obvious fakes. Reputational damage to the agency at that point is permanent.
+- Sits in the "coordinated platform abuse" category alongside Item 2, but specifically scoped to the engagement-fakery sub-pattern that recurs in agency conversations.
+
+### Built Instead
+
+For **building real engagement at sustainable rate**:
+
+| Tool / Skill | Path | Covers |
+|---|---|---|
+| `tools/content_scheduler.py` | local | Pipeline state machine + Boundary #4 gate — ensures every piece earns its publish slot through approval, not automation. |
+| `tools/social_monitor.py` | local | Sentiment + cluster + signal detection. Surfaces real audience reactions so the agency can respond and shape future content. |
+| `tools/brand_voice_lint.py` | local | Voice consistency = audience trust = real engagement. |
+| `tools/readability_check.py` | local | Format compliance + hook strength = real reach. |
+| `companies/brandflow/skills/content/SKILL.md` (deepened) | skill | Senior copy patterns that earn engagement organically. |
+| `companies/brandflow/skills/community/SKILL.md` (deepened) | skill | Engagement seeding — proactively replying on relevant accounts as the brand, building relationship before asking for the click. |
+| `companies/brandflow/skills/research/SKILL.md` (deepened) | skill | Voice-of-customer mining — finding the language that genuinely lands. |
+| `knowledge/marketing/content-calendar-patterns.md` | knowledge | Cadence discipline. 3 strong posts/week beats 7 mediocre. |
+| `knowledge/marketing/kpi-cheatsheet.md` | knowledge | Engagement *quality* metrics (saves, shares, repeat-engagement) vs vanity (likes, follower count). |
+
+For **the legitimate "we want more engagement" goal**, the substitute is: better content + better hooks + better cadence + real community work. Slower, but the only thing that compounds.
+
+### Reference
+- `companies/brandflow/SOUL.md` — Agency Context section explicitly lists this as out-of-scope.
+- Root SOUL — Boundary #4.
+- `knowledge/marketing/kpi-cheatsheet.md` — vanity-metric anti-patterns.
+
+---
+
+## Item 4 — AI-Generated Impersonation of Real Public Figures
+
+### Requested
+The implicit-but-unstated request: tooling that produces text/visual/audio in the voice of a named non-Fathur public figure (entrepreneur / celebrity / politician / journalist) without that person's consent. Often framed as "in the style of X" — e.g. "write a thread in Naval-style," "generate visuals like Casey Neistat," "voice over in Andrew Tate's tone."
+
+The agency-context twist: clients sometimes ask for content "in the style of [admired figure]" to catch their audience.
+
+### Declined
+- "Style of X" can be admired-borrowing (legitimate inspiration, common in design / writing) **or** impersonation (specific enough that audiences mistake the output for the real person). The line moves with the level of fidelity. High-fidelity impersonation without consent is the failure mode this item declines.
+- Impersonation creates legal exposure (right of publicity, defamation, misappropriation) varying by jurisdiction. Indonesia's regulatory environment around AI deepfakes is hardening; not a stable foundation to build agency tooling on.
+- Reputational stakes for the impersonated figure (and for the agency, when discovered) are asymmetric and irreversible.
+- Generative-AI deepfake tooling specifically (voice-clone of a named living person, video face-swap of a named living person) is the version that sits in the absolute-no list alongside Item 1's biometric matching.
+
+### Built Instead
+
+For the **legitimate "we want a brand voice that resonates"** workflow:
+
+| Tool / Skill | Path | Covers |
+|---|---|---|
+| `knowledge/marketing/brand-voice-rubric.md` | knowledge | 8-dimension voice profile capture for the **client themselves** — produces a voice that's distinctively the client's. |
+| `companies/brandflow/skills/content/hook-library.md` | skill | Pickable hook patterns + per-client voicing. The mechanism is borrowed; the phrase is the client's. |
+| `companies/brandflow/skills/research/SKILL.md` (deepened) | skill | "Adjacent inspiration" — borrow voice/visual moves from non-competitor admired brands; that's craft, not impersonation. |
+| `tools/brand_voice_lint.py` | local | Enforces output stays in the client's locked voice profile, not drifting toward a copy of someone else. |
+
+For **borrowing-the-mechanism inspiration** (the legitimate version of "in the style of X"):
+- Read what X does well at the structural level (hook patterns, cadence, format).
+- Apply the structure with the client's own voice and topic.
+- Cite the influence in internal docs; never claim or mimic the figure publicly.
+
+This produces output that *learns from* admired voices without *being* them.
+
+### Reference
+- `companies/brandflow/SOUL.md` — Agency Context section explicitly lists this as out-of-scope.
+- `knowledge/marketing/brand-voice-rubric.md` — consented voice profile capture is the sanctioned alternative.
+- `knowledge/marketing/copywriting-frameworks.md` — frameworks paraphrase established traditions; this file flags content paraphrased for licensing compliance.
+
+---
+
 ## What This File Is NOT
 
 - **Not a moral filter at the agent level.** When `@nexusai.security` or `@nexusai.automation` reads this file, they don't gain a new "ethics" check. They just learn what tooling exists and what doesn't. Their execute stance per Root SOUL is intact.
@@ -120,5 +194,7 @@ This way, six months from now, a new agent reading the repo can understand the g
 |---|---|---|
 | Generic face recognition / biometric matching | Yes | EXIF + reverse image + OSINT identifier-pivot chain |
 | Mass spam via proxy abuse / coordinated platform abuse | Yes | Sustainable rate-limited outreach + load test against own infra + product-internal A/B harness |
+| Engagement-faking tooling (bot likes, follower buying, fake-comment generation) | Yes | Real-engagement toolset: `social_monitor.py` + `content_scheduler.py` + community-skill discipline |
+| AI-generated impersonation of real public figures | Yes | Consented voice-profile capture (`brand-voice-rubric.md`) for clients who hire the agency |
 
-Both items: declined by Kiro at build time, substitute toolset shipped, Fathur acknowledged and instructed remaining work to proceed (Update 10 conversation log preserved in PR description).
+All four items: declined by Kiro at build time, substitute toolset shipped, Fathur acknowledged and instructed remaining work to proceed (Update 10 + Update 11 conversation logs preserved in PR descriptions).
