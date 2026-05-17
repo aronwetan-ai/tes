@@ -76,9 +76,33 @@ Lessons  : <what to keep / drop>
 
 ---
 
-## Cross-Company Collaboration Log
+## Cross-Company Collaboration Protocol
 
-Belum ada catatan kolaborasi cross-company yang durable. Akan ditulis di sini saat BrandFlow bekerja sama dengan NexusAI (mis. landing page copy) atau Crypto Consultant (mis. translate research jadi audience-friendly content).
+[ARCH] 2026-05-17 — Cross-company integration infrastructure deployed. SOPs:
+- `knowledge/sop/cross-company-handoff.md` — handoff block format + type-specific templates
+- `knowledge/sop/cross-company-qa-routing.md` — auto QA triggers when other companies feed us
+- `knowledge/sop/approval-workflow.md` — Fathur approval gate (Tier 3 decisions only)
+- `knowledge/sop/autonomous-boundaries.md` — what runs without Fathur (most things)
+- `knowledge/sop/weekly-cadence.md` — autonomous weekly rhythm (Mon-Fri)
+
+**BrandFlow's role in cross-company:**
+- **Receives:** Research handoffs from Crypto Consultant (Type 1: Research → Content)
+- **Produces:** Social content drafts + design specs. Sends [HANDOFF → NEXUSAI] for design direction.
+- **QA duty:** @brandflow.qa reviews NexusAI visual implementation for brand consistency (Checklist C)
+- **Client work:** Content translation from research → audience-friendly social. Disclaimer + Boundary #4 carried through.
+- **Weekly cadence:** Monday 10:30-12:00 WIB = our production window (after Crypto handoff). QA at 12:00. Cross-QA at 12:30.
+
+**Active handoff relationships:**
+- Crypto → BrandFlow: Weekly crypto brief (receives research, produces thread + carousel)
+- BrandFlow → NexusAI: Design direction for dashboard (colors, type, visual hierarchy)
+- BrandFlow → Crypto: Content requests when client needs fresh research
+
+**Active clients:**
+- `companies/brandflow/clients/crypto-influencer/voice.md` — crypto influencer (data-first, anti-hype, bold)
+
+### Collaboration Log
+
+_Entries written here when cross-company work happens:_
 
 ---
 
