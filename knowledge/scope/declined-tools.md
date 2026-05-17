@@ -1,8 +1,8 @@
 # Declined Tools — Scope Documentation
 
-Versi: 1.0
-Update terakhir: 2026-05-17 (Update 10 — NexusAI deepening)
-Status: Authoritative reference for what NexusAI / AI Holding **does NOT build**, regardless of framing.
+Versi: 1.2
+Update terakhir: 2026-05-17 (Update 12 — Crypto Consultant deepening; Item 5 added; Items 3-4 land via Update 11 / PR #8 BrandFlow)
+Status: Authoritative reference for what NexusAI / BrandFlow / Crypto Consultant / AI Holding **does NOT build**, regardless of framing.
 Audience: Future agents + Fathur + future operators.
 
 ---
@@ -91,6 +91,63 @@ These three workflows cover essentially all legitimate operational needs that a 
 
 ---
 
+## Item 5 — Automated "Guaranteed Signal" / Auto-Trading Bot
+
+### Requested
+During the Crypto Consultant deepening discussion (Update 12), the implicit-but-recurring request: a tool that produces **buy/sell signals** algorithmically, or that auto-executes trades based on the company's pattern detection / on-chain reads / news sentiment. Often framed as: "since the agents already analyze the market, why not let them just trade?"
+
+The agency-context twist: clients (and Fathur himself in some moods) want the analysis pipeline collapsed into automated execution.
+
+### Declined
+- Crypto Consultant's entire identity is **probabilistic analysis with explicit uncertainty**, not signal production. Auto-execution erases the layer that makes the analysis honest.
+- All sample sizes for crypto patterns are small (N=3-4 cycles). Confidence levels appropriate for "investigate further" are wildly inappropriate for "automatically deploy capital."
+- Auto-trading bots in crypto have a graveyard-tier failure history. The well-known ones either: lose money silently on outlier moves; get exploited via predictable behavior; lock users out during the exact moments human judgment is needed.
+- Boundary #4 amplified: a bot that trades under Fathur's name is "speaking as Fathur in public" continuously; the per-decision approval gate disappears.
+- Liability/regulatory: depending on jurisdiction, automated signal-as-service can trigger investment-adviser registration or securities laws. Out of scope for this repo.
+- Sits in the same kernel as Item 2 (mass platform abuse) — a tool whose scope cannot be bounded by its framing once shipped.
+
+### Built Instead
+
+For the **legitimate "I want decisions to be more systematic"** workflow:
+
+| Tool / Skill | Path | Covers |
+|---|---|---|
+| `tools/price_scraper.py` | local | Historical OHLCV; the data input that real research needs |
+| `tools/pattern_detector.py` | local | **Detects** patterns over OHLCV; outputs pattern name + base rate + invalidation. Does NOT issue signals. Pattern firing = signal to investigate, not directive to act. |
+| `tools/onchain_metrics.py` | local | Network-health + DeFi TVL data for senior reads |
+| `tools/funding_rates.py` | local | Derivatives-lens data; positioning context |
+| `tools/news_scraper.py` | local | Narrative-lens data with explicit sentiment-heuristic disclaimer |
+| `companies/crypto-consultant/skills/pattern-recognition/SKILL.md` | skill | The 3-Guard discipline — name+source / base rate / invalidation; force-fit detection |
+| `companies/crypto-consultant/skills/research/SKILL.md` (deepened) | skill | 3-Lens Convergence Test, Forecast Ledger, Brier calibration |
+| `companies/crypto-consultant/skills/risk/SKILL.md` (deepened) | skill | Drawdown floors, position-sizing math, cycle-phase risk posture |
+| `knowledge/crypto/forecast-evaluation.md` | knowledge | Calibration tracking — track which patterns / agents call cycles well over time |
+| `knowledge/crypto/scenario-modeling.md` | knowledge | Probability-weighted scenarios with ranges, not point predictions |
+
+For the **legitimate "I want execution to be mechanical"** workflow (the discipline part of "auto-trade"):
+- Pre-defined entry zones, invalidation levels, and sizing math from `@crypto.risk` BEFORE entry
+- "Stop means stop" rule from risk skill — mechanical execution at the trader's hand, not a bot's
+- Predefined partial-take levels per setup
+- Forecast ledger entry filed before any size goes on
+- Post-mortem for every closed position, win or loss
+
+This produces **systematic decision-making** without abdicating judgment to a bot. The discipline is mechanical; the trade decision remains human, with full Boundary #4 gating intact.
+
+### What Crypto Consultant Will Not Output, Period
+
+- `BUY $X at price Y, target Z, stop W` (commands phrased as advice or as bot-instruction).
+- "Guaranteed setup" / "high-probability play" without 3-Guard discipline.
+- Single-number price targets without ranges and probabilities.
+- Auto-publishing of analysis to social channels (Boundary #4).
+- Wallet attribution claims at Tier 3-4 confidence in publishable output.
+
+### Reference
+- `companies/crypto-consultant/SOUL.md` — Prediction Discipline section explicitly limits this scope.
+- Root SOUL — Boundary #4 + Real Boundary #2 (irreversible external action requires confirmation).
+- `companies/crypto-consultant/skills/research/SKILL.md` Senior Patterns — 3-Lens Convergence + Forecast Ledger.
+- `knowledge/crypto/forecast-evaluation.md` — calibration discipline replaces "trust the bot" with "track the track record."
+
+---
+
 ## What This File Is NOT
 
 - **Not a moral filter at the agent level.** When `@nexusai.security` or `@nexusai.automation` reads this file, they don't gain a new "ethics" check. They just learn what tooling exists and what doesn't. Their execute stance per Root SOUL is intact.
@@ -118,7 +175,12 @@ This way, six months from now, a new agent reading the repo can understand the g
 
 | Item | Declined | Built Instead |
 |---|---|---|
-| Generic face recognition / biometric matching | Yes | EXIF + reverse image + OSINT identifier-pivot chain |
-| Mass spam via proxy abuse / coordinated platform abuse | Yes | Sustainable rate-limited outreach + load test against own infra + product-internal A/B harness |
+| 1. Generic face recognition / biometric matching | Yes | EXIF + reverse image + OSINT identifier-pivot chain |
+| 2. Mass spam via proxy abuse / coordinated platform abuse | Yes | Sustainable rate-limited outreach + load test against own infra + product-internal A/B harness |
+| 3. Engagement-faking tooling (bot likes, follower buying, fake-comment generation) | Yes (lands via Update 11 / PR #8) | Real-engagement toolset: `social_monitor.py` + `content_scheduler.py` + community-skill discipline |
+| 4. AI-generated impersonation of real public figures | Yes (lands via Update 11 / PR #8) | Consented voice-profile capture (`brand-voice-rubric.md`) for clients who hire the agency |
+| 5. Automated "guaranteed signal" / auto-trading bot | Yes | Probabilistic pattern detection + 3-Guard discipline + Forecast Ledger calibration; mechanical-discipline execution at human hand, never bot |
 
-Both items: declined by Kiro at build time, substitute toolset shipped, Fathur acknowledged and instructed remaining work to proceed (Update 10 conversation log preserved in PR description).
+All five items: declined by Kiro at build time, substitute toolset shipped, Fathur acknowledged and instructed remaining work to proceed (Update 10, 11, 12 conversation logs preserved in PR descriptions).
+
+Numbering note: Items 3 and 4 are reserved by Update 11 (BrandFlow deepening, PR #8 — pending merge to main). Item 5 added in Update 12 (Crypto Consultant deepening, this branch). When PR #8 merges, the Items 3-4 sections will conflict-merge cleanly because they slot between Items 2 and 5.
