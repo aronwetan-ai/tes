@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Atomic write tempfiles from bin/task_logger.py
+*.jsonl.tmp
+
+# Editor / OS
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
+
+# Local archive folder (generated, not tracked)
+tasks/archive/
+companies/*/tasks/archive/
+memory/archive/

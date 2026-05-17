@@ -1,9 +1,291 @@
 # AI Holding Project Summary
 
-Tanggal: 17 Mei 2026 — Update 7
+Tanggal: 17 Mei 2026 — Update 9
 Owner: Fathur
 Environment: WSL2 + Hermes + Telegram Bot + Online Provider API Key
 Repository: aronwetan-ai/tes
+
+---
+
+## Update 9 — Tahap G Complete (17 Mei 2026)
+
+Branch: `feat/task-logger-jsonl` (extends Update 8 PR #6)
+
+### A. Tujuan
+
+Update 9 menyelesaikan **semua sisa Tahap G** yang ditandai PLANNED / on-demand sejak Update 3-8:
+
+1. **Tools tambahan** — `btc_price.py` + `news_sentiment.py` (PLANNED sejak Update 3 → Active).
+2. **Tier 3 SOULs untuk role sisa** — 14 file baru → coverage 32/32 (was 18/32).
+3. **Hermes hardening** — whitelist policy untuk tool auto-approval.
+4. **Lifecycle ops** — archival (`archive_tasks.py`, `archive_messages.py`) + recap (`recap_manager.py`) yang sebelumnya hanya rule, sekarang ada implementasinya.
+
+### B. Yang Dieksekusi
+
+#### B.1 Tools tambahan (2 file)
+
+| File | API | Risk | Output |
+|---|---|---|---|
+| `tools/btc_price.py` | CoinGecko (free, no key) | Low | Price + 24h change + market cap + volume + last-updated |
+| `tools/news_sentiment.py` | CryptoPanic (free public feed) | Low | Headlines + per-item sentiment (keyword heuristic) + summary skew |
+
+Both have `--json` mode for machine-readable output. Both honest about limitations: `news_sentiment.py` explicitly disclaims that its classifier is keyword-based, not full NLP.
+
+#### B.2 Lifecycle ops (3 file)
+
+| File | Purpose | Reuses |
+|---|---|---|
+| `bin/archive_tasks.py` | Move terminal tasks > N days from `inbox.jsonl` to `archive/<YYYY-MM>.jsonl` | `task_logger.py` |
+| `bin/archive_messages.py` | Same for `messages.jsonl` → `messages-archive/<YYYY-MM>.jsonl` | `task_logger.py` |
+| `bin/recap_manager.py` | Windowed recap (daily/weekly/monthly/custom) → `recap.jsonl` | `task_logger.py` |
+
+All three:
+- `--dry-run` support (whitelistable).
+- `--quiet` for cron-friendly one-line output.
+- Idempotent (re-running safe; archive bucket dedupes by ID; recap appends).
+- Read `AI_HOLDING_HOME` env override.
+- Audit `ARCHIVE` events go to `logs.jsonl` (which itself is NEVER archived).
+
+#### B.3 Tier 3 SOULs lengkap (14 file baru)
+
+```
+NexusAI (+4):     pm, frontend, qa, writer
+BrandFlow (+5):   pm, seo, analytics, qa, writer
+Crypto (+5):      pm, data, qa, report, writer
+```
+
+Sekarang **32 dari 32** active role di `AGENTS.md` punya Tier 3 SOUL — tidak ada lagi yang fall-back ke Tier 2 boilerplate.
+
+Catatan domain-specific:
+- `@brandflow.qa` & `@crypto.qa` punya **auto-reject banlist** untuk language yang melanggar Boundary #4 / financial advice posture.
+- `@crypto.report` punya **mandatory disclaimer block** verbatim — tidak ada artifact crossing the boundary tanpa itu.
+- `@crypto.data` distinguish dari `@crypto.onchain` (data structure layer vs forensic analysis).
+- `@brandflow.writer` distinguish dari `@brandflow.copywriter` (long-form / institutional vs short-form / hook-driven).
+- `@nexusai.writer` distinguish dari `@brandflow.writer` (technical reference vs brand voice).
+
+#### B.4 Hermes whitelist policy
+
+`knowledge/tools/hermes-whitelist.md` — authoritative policy:
+
+- **7 eligibility rules** (Risk Low + read-only + no-secrets + no-external-mutation + bounded-cost + deterministic + observable).
+- **Current whitelist recommendation**: 4 fully-whitelisted tools (`fear_greed.py`, `btc_price.py`, `news_sentiment.py`, `list_tasks.py`) + 3 dry-run-only (`recap_manager.py`, `archive_tasks.py`, `archive_messages.py`).
+- **Illustrative YAML config** for Hermes (Fathur applies in WSL — outside repo).
+- **Audit + revocation rules**.
+
+`knowledge/tools/tool-registry.md` Versi 1.2:
+- Quick reference table tambah kolom **Whitelisted**.
+- 4 tool entry baru (TOOL-002 + TOOL-003 + TOOL-010..012) sebagai Active (was PLANNED).
+
+#### B.5 Memory + docs
+
+- `task-logger-rules.md` — section "Archival Operations" + "Recap Operations" baru dengan command examples + cron cadence + anti-patterns.
+- `MEMORY.md` (root) v2.2 — strategic decision #10-12 added; folder layout reflect 3 tools active.
+- `memory/global.md` v2.2 — 5 `[DECISION]` baru, 4 `[ARCH]` baru, 6 `[TOOL]` updated dari PLANNED → Active.
+
+### C. Total File Changes
+
+```
+Created (tools):
+  tools/btc_price.py
+  tools/news_sentiment.py
+
+Created (lifecycle ops):
+  bin/archive_tasks.py
+  bin/archive_messages.py
+  bin/recap_manager.py
+
+Created (Tier 3 SOULs — 14 file):
+  companies/nexusai/agents/pm.md
+  companies/nexusai/agents/frontend.md
+  companies/nexusai/agents/qa.md
+  companies/nexusai/agents/writer.md
+  companies/brandflow/agents/pm.md
+  companies/brandflow/agents/seo.md
+  companies/brandflow/agents/analytics.md
+  companies/brandflow/agents/qa.md
+  companies/brandflow/agents/writer.md
+  companies/crypto-consultant/agents/pm.md
+  companies/crypto-consultant/agents/data.md
+  companies/crypto-consultant/agents/qa.md
+  companies/crypto-consultant/agents/report.md
+  companies/crypto-consultant/agents/writer.md
+
+Created (docs):
+  knowledge/tools/hermes-whitelist.md
+
+Modified:
+  knowledge/tools/tool-registry.md           (Versi 1.2)
+  knowledge/agent-design/task-logger-rules.md (Archival + Recap sections)
+  MEMORY.md                                   (Versi 2.2)
+  memory/global.md                            (Versi 2.2)
+  summary.md                                  (this section)
+```
+
+20 file dibuat baru, 5 file dimodifikasi, 0 dihapus.
+
+### D. Dampak Operasional
+
+Sebelum:
+- `@crypto.market` mau cek harga BTC live → tidak ada tool, harus claim "tidak punya akses real-time".
+- `@brandflow.analytics` mau scan headline sentiment → tidak ada tool.
+- 14 role di-fallback ke Tier 2 SOUL boilerplate, voice tidak khas role.
+- Hermes minta approval setiap kali agent jalankan `fear_greed.py` — friksi tinggi.
+- Aturan archival ada di doc, tapi tidak ada cara eksekusi.
+- Recap manual setiap kali Fathur tanya status.
+
+Sesudah:
+- `@crypto.market` panggil `btc_price.py` langsung — auto-approve via whitelist.
+- `@brandflow.analytics` punya akses headline sentiment scan dengan disclaimer ke methodology.
+- Setiap role aktif punya voice + decision authority + output format spesifik.
+- 4 tool read-only auto-run di Hermes; tool mutating tetap gated.
+- `bin/archive_tasks.py` rapi-rapi inbox.jsonl mingguan; `bin/recap_manager.py` generate weekly digest otomatis.
+- Crypto QA + Crypto Report punya guard yang eksplisit (banlist + mandatory disclaimer) — Boundary #4 tidak bisa terlewat.
+
+### E. Smoke Test
+
+Akan dilakukan post-commit untuk `archive_tasks.py` (dry-run) + `recap_manager.py --dry-run` + `list_tasks.py` (read-only, no real data needed).
+
+`btc_price.py` + `news_sentiment.py` sandbox tidak punya internet ke CoinGecko/CryptoPanic — code-review sufficient; Fathur verifikasi live di WSL post-merge.
+
+### F. Yang Belum Selesai (untuk PR berikutnya — Tahap H)
+
+1. **Hermes config apply** — Fathur eksekusi di WSL berdasarkan `hermes-whitelist.md` template. Di luar repo.
+2. **Cron setup** — weekly archival + recap. Di luar repo (WSL crontab).
+3. **Migration prep ke Telegram Topics (Option C)** — setelah semua Tahap A-G stabil di Option A.
+4. **Live verification** — `btc_price.py` + `news_sentiment.py` di WSL dengan internet access.
+
+---
+
+## Update 8 — Task Logger JSONL Implementation (17 Mei 2026)
+
+Branch: `feat/task-logger-jsonl`
+
+### A. Tujuan
+
+Sebelum Update 8:
+- Schema task sudah didefinisi di `companies/nexusai/skills/automation/SKILL.md`, tapi **tidak ada implementasi**.
+- 4 file JSONL per company (`inbox.jsonl`, `logs.jsonl`, `messages.jsonl`, `recap.jsonl`) **kosong semua**.
+- Tidak ada cara konsisten untuk: buat task baru, transition status, list/filter, hand-off antar agent.
+- SKILL.md menyebut struktur 3-file move (`inbox / active / done`) yang **tidak match** reality (4-file: inbox/logs/messages/recap).
+
+Update 8 menyelesaikan empat hal:
+1. **Implementasi production scripts** (Python) untuk full task lifecycle.
+2. **Reconcile dokumentasi** dengan reality file structure.
+3. **Tulis authoritative rules** untuk schema, state machine, filter rules, anti-pattern.
+4. **Wire ke COMMANDS.md** sebagai natural commands Main Assistant.
+
+### B. Yang Dieksekusi
+
+**1. Production scripts di `bin/` (5 executable + 1 library):**
+
+| File | Peran | Risk |
+|---|---|---|
+| `bin/log_task.py` | Buat task baru (auto ID `T###` per-company, validasi schema, append + audit) | Medium |
+| `bin/update_task.py` | Transition status (state machine validated, audit) | Medium |
+| `bin/list_tasks.py` | Filter & list (by company, agent, status, priority; format table/json/jsonl) | Low |
+| `bin/log_message.py` | Append agent-to-agent durable message | Medium |
+| `bin/log-task.sh` | Wrapper bash 3-arg ergonomis untuk `log_task.py` | Medium |
+| `bin/task_logger.py` | Shared library — schema, validation, atomic I/O. Tidak dipanggil langsung. | N/A |
+
+Karakteristik script:
+- Read `AI_HOLDING_HOME` env var; default fallback walk-up dari script location.
+- Append idempoten; `inbox.jsonl` rewrite atomic via `<file>.tmp` + `os.replace()`.
+- `logs.jsonl` strict append-only — audit trail tidak pernah dimutasi.
+- Validasi schema reject task < 8 char (filter rules: no basa-basi).
+- State machine guard: transisi tidak valid (mis. `DONE → NEW`) ditolak dengan exit 2.
+- Exit code 0 = OK, 2 = schema/transition/argument error, 3 = I/O error.
+
+**2. Authoritative rules** — `knowledge/agent-design/task-logger-rules.md`:
+- Tujuan + boundary task logger (apa yang masuk vs tidak).
+- Schema lengkap untuk 3 entry type (task, audit, message).
+- State machine + diagram transisi yang boleh.
+- Filter rules — list eksplisit apa yang DILOG dan apa yang TIDAK.
+- 3 workflow contoh end-to-end (delegate, recap, failed→retry).
+- Anti-pattern + maintenance rules.
+- Hubungan dengan memory (kapan task vs kapan memory).
+
+**3. SKILL.md reconciliation** — `companies/nexusai/skills/automation/SKILL.md`:
+- Tambah section "File Structure (Authoritative)" yang reflect reality 4-file.
+- Tambah section "Implementasi (Production Scripts)" dengan tabel 6 script + workflow contoh.
+- State machine diperjelas; DONE / CANCELLED disebut terminal eksplisit.
+
+**4. Tool registry** — `knowledge/tools/tool-registry.md` versi 1.1:
+- 5 entry baru: TOOL-005 sampai TOOL-009 (4 script + 1 library).
+- Detail command, purpose, risk, status untuk tiap script.
+
+**5. COMMANDS.md (root)** — natural commands baru:
+- `cek task aktif <company>` → backed by `list_tasks.py --active-only`.
+- `cek task <company> status <STATUS>` → filter by status.
+- `log task untuk @company.agent: <desc> [priority HIGH]` → backed by `log_task.py`.
+- `mulai task <ID>`, `tutup task <ID> sebagai DONE`, `batalkan task <ID>` → state transitions.
+- `kirim pesan dari @x ke @y: <msg> [ref T001]` → backed by `log_message.py`.
+
+**6. Memory updates**:
+- `MEMORY.md` (root) versi 2.1: tambah strategic decision #9 (Task Logger model), update folder structure dengan 5 script baru di `bin/`.
+- `memory/global.md` versi 2.1: 4 `[DECISION]` baru, 4 `[ARCH]` baru, 7 `[TOOL]` baru (script + library + wrapper), 2 `[NOTE]` updated dengan status terbaru.
+
+### C. Smoke Test (12 cases lulus semua)
+
+```
+1. create task auto ID                    → OK (T001)
+2. bash wrapper 3-arg                     → OK (T002)
+3. create with --context JSON             → OK (T001 crypto-consultant, ID space per-company)
+4. validation reject task <8 char         → exit 2 (filter rules enforced)
+5. list tasks (table format)              → OK
+6. NEW → IN_PROGRESS → DONE                → OK (history captured in context)
+7. illegal transition DONE → NEW           → exit 2 (state machine guard)
+8. filter --active-only                   → terminal hidden
+9. filter --status DONE                   → match only DONE
+10. log_message with --ref-task            → OK (durable hand-off)
+11. update nonexistent task ID             → exit 2 (not found)
+12. format jsonl machine-readable          → OK (single-line JSON each)
+```
+
+Audit log captured: 2 CREATE events + 2 UPDATE events dengan `prev_status`, `new_status`, `actor`, `at`, `note`. Test data direset ke kosong post-test.
+
+### D. Total File Changes
+
+```
+Created:  bin/task_logger.py          (shared library, 350+ lines)
+Created:  bin/log_task.py             (CLI create)
+Created:  bin/update_task.py          (CLI transition)
+Created:  bin/list_tasks.py           (CLI filter & list)
+Created:  bin/log_message.py          (CLI agent-to-agent message)
+Created:  bin/log-task.sh             (bash wrapper)
+Created:  knowledge/agent-design/task-logger-rules.md  (authoritative rules)
+Modified: companies/nexusai/skills/automation/SKILL.md (reconciled with reality)
+Modified: knowledge/tools/tool-registry.md            (5 entries: TOOL-005..009)
+Modified: COMMANDS.md                  (natural commands for task logger)
+Modified: MEMORY.md                    (strategic decision #9 + folder layout)
+Modified: memory/global.md             (4 DECISION + 4 ARCH + 7 TOOL + 2 NOTE)
+Modified: summary.md                   (this section)
+```
+
+7 file dibuat baru, 6 file dimodifikasi, 0 file dihapus.
+
+### E. Dampak Operasional
+
+Sebelum:
+- Task antar agent hanya hidup di chat history — tidak resumable.
+- Tidak ada audit trail — kalau ada dispute "task ini sudah selesai apa belum?", tidak ada source of truth.
+- Hand-off antar agent informal — risiko terlewat.
+- Schema task didefinisi tapi tidak di-enforce.
+
+Sesudah:
+- Task adalah **first-class durable entity** dengan ID, state, history, audit trail.
+- State machine eksplisit & divalidasi script — tidak mungkin transisi liar.
+- Audit trail di `logs.jsonl` immutable — siapa pindah status apa, kapan, dengan note apa.
+- Hand-off via `messages.jsonl` durable — agent berikutnya melihatnya saat session start.
+- Filter rules di-enforce by validation (min 8 char task; min 4 char message).
+- Resumable: kalau session crash, state ada di file — agent berikutnya bisa lanjut tanpa kehilangan konteks.
+
+### F. Yang Belum Selesai (untuk PR berikutnya — Tahap G)
+
+1. **Tools tambahan** — `tools/btc_price.py` (CoinGecko), `tools/news_sentiment.py`. Sudah PLANNED di registry.
+2. **Tier 3 SOULs untuk role sisa** (PM, QA, Writer, Frontend, SEO, Analytics, Data, Report) — on-demand saat Fathur mulai sering pakai.
+3. **Whitelist tool read-only di Hermes** (Hermes hardening — supaya `fear_greed.py` + `list_tasks.py` bisa dipanggil tanpa konfirmasi).
+4. **Recap Manager** — script yang otomatis generate `recap.jsonl` dari `inbox.jsonl` + `logs.jsonl`.
+5. **Archival workflow** — pindah terminal tasks (`DONE`/`CANCELLED`) yang > 30 hari ke `tasks/archive/<YYYY-MM>.jsonl`.
 
 ---
 

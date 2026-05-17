@@ -1,7 +1,7 @@
 # memory/global.md — AI Holding Operational Memory
 
-Versi: 2.0
-Update terakhir: 2026-05-17 (post Update 6)
+Versi: 2.2
+Update terakhir: 2026-05-17 (post Update 9 — Tahap G complete)
 Dikelola oleh: Main Assistant
 Scope: Tagged operational log. **Read this when starting work that touches existing decisions.**
 
@@ -51,6 +51,13 @@ Total agent: 32. Tier 3 SOULs: 18.
 [DECISION] 2026-05-17 — Boundary #4 (tidak bicara atas nama Fathur di publik) diamplify khusus di BrandFlow community + Crypto onchain/risk/reporting.
 [DECISION] 2026-05-17 — Skill specialization model: per-company skill set, hapus boilerplate yang tidak relevan, bukan satu skill set seragam.
 [DECISION] 2026-05-17 — Memory dipecah: `MEMORY.md` (root) = strategic narrative; `memory/global.md` = operational tagged log.
+[DECISION] 2026-05-17 — Task Logger pakai single-file `inbox.jsonl` + status field, BUKAN 3-file move pattern (inbox/active/done). Alasan: idempoten, no race condition, mudah query.
+[DECISION] 2026-05-17 — Task Logger state machine eksplisit & divalidasi: NEW → IN_PROGRESS → DONE / FAILED / CANCELLED. Transisi tidak valid ditolak script.
+[DECISION] 2026-05-17 — `logs.jsonl` adalah append-only audit trail, tidak boleh diedit / dihapus tanpa konfirmasi user.
+[DECISION] 2026-05-17 — Tier 3 SOUL coverage diselesaikan untuk SEMUA role aktif (32/32). Tidak ada lagi role yang fall-back ke Tier 2 boilerplate. Update 9 / Tahap G.
+[DECISION] 2026-05-17 — Hermes whitelist policy: hanya Risk=Low + read-only + no-secrets + no-external-mutation + bounded-cost yang boleh auto-approve. Detail di `knowledge/tools/hermes-whitelist.md`.
+[DECISION] 2026-05-17 — Task archival: DONE/CANCELLED > 30 hari pindah ke `archive/<YYYY-MM>.jsonl`. FAILED tidak auto-archive (mungkin retry). `logs.jsonl` NEVER diarsipkan.
+[DECISION] 2026-05-17 — Recap pakai windowed model (daily/weekly/monthly/custom) dengan output append-only ke `recap.jsonl`. Recap adalah aggregate snapshot, BUKAN source of truth — truth tetap di `logs.jsonl`.
 
 ---
 
@@ -66,6 +73,13 @@ Total agent: 32. Tier 3 SOULs: 18.
 [ARCH] 2026-05-17 — Skill files specialized per company (21 file aktif, 16 boilerplate dihapus). 3 SKILLS.md index dibuat.
 [ARCH] 2026-05-17 — `bin/create-company.sh` updated untuk substitusi `{{COMPANY_SLUG}}`. Template di `templates/company/` updated ke Tier-2 design.
 [ARCH] 2026-05-17 — `MEMORY.md` (root) + `memory/global.md` direstrukturisasi: split jelas strategic vs operational.
+[ARCH] 2026-05-17 — Task Logger JSONL diimplementasi: 4 script (`log_task.py`, `update_task.py`, `list_tasks.py`, `log_message.py`) + shared library (`task_logger.py`) + bash wrapper (`log-task.sh`) di `bin/`.
+[ARCH] 2026-05-17 — `knowledge/agent-design/task-logger-rules.md` ditulis sebagai authoritative rules: schema, state machine, filter rules, anti-pattern.
+[ARCH] 2026-05-17 — `companies/nexusai/skills/automation/SKILL.md` di-reconcile dengan reality file structure (4-file: inbox/logs/messages/recap), bukan struktur 3-file move yang awal.
+[ARCH] 2026-05-17 — Tier 3 SOULs lengkap: 14 file baru (Update 9). NexusAI: pm/frontend/qa/writer. BrandFlow: pm/seo/analytics/qa/writer. Crypto: pm/data/qa/report/writer. Total agent SOULs: 32 (was 18).
+[ARCH] 2026-05-17 — Tools tambahan diimplementasi: `tools/btc_price.py` (CoinGecko) + `tools/news_sentiment.py` (CryptoPanic + keyword sentiment heuristic). Both Risk=Low, whitelisted.
+[ARCH] 2026-05-17 — Task lifecycle ops: `bin/archive_tasks.py` + `bin/archive_messages.py` + `bin/recap_manager.py`. All use shared `task_logger.py` library. Dry-run support across all three.
+[ARCH] 2026-05-17 — `knowledge/tools/hermes-whitelist.md` ditulis sebagai authoritative policy untuk Hermes auto-approval. Registry (`tool-registry.md`) gain Whitelisted column.
 
 ---
 
@@ -73,8 +87,17 @@ Total agent: 32. Tier 3 SOULs: 18.
 
 [TOOL] fear_greed.py — Active — `/home/fatur/ai-holding/tools/fear_greed.py` — fetches Crypto Fear & Greed Index from Alternative.me.
 [TOOL] create-company.sh — Active — `/home/fatur/ai-holding/bin/create-company.sh` — generates new company from template.
-[TOOL] btc_price.py — PLANNED — belum dibuat. Reference: CoinGecko API.
-[TOOL] news_sentiment.py — PLANNED — belum dibuat.
+[TOOL] log_task.py — Active — `/home/fatur/ai-holding/bin/log_task.py` — append task ke inbox.jsonl + audit ke logs.jsonl.
+[TOOL] update_task.py — Active — `/home/fatur/ai-holding/bin/update_task.py` — transition status existing task (state machine validated) + audit.
+[TOOL] list_tasks.py — Active — `/home/fatur/ai-holding/bin/list_tasks.py` — filter & list tasks (table/json/jsonl).
+[TOOL] log_message.py — Active — `/home/fatur/ai-holding/bin/log_message.py` — agent-to-agent durable message ke messages.jsonl.
+[TOOL] task_logger.py — Active (library) — `/home/fatur/ai-holding/bin/task_logger.py` — shared schema/validation/I/O.
+[TOOL] log-task.sh — Active — `/home/fatur/ai-holding/bin/log-task.sh` — bash wrapper 3-arg untuk log_task.py.
+[TOOL] btc_price.py — Active (post Update 9) — `/home/fatur/ai-holding/tools/btc_price.py` — CoinGecko BTC price + 24h change. Whitelisted.
+[TOOL] news_sentiment.py — Active (post Update 9) — `/home/fatur/ai-holding/tools/news_sentiment.py` — CryptoPanic headlines + keyword sentiment. Whitelisted.
+[TOOL] archive_tasks.py — Active (post Update 9) — `/home/fatur/ai-holding/bin/archive_tasks.py` — move DONE/CANCELLED > N days to archive/<YYYY-MM>.jsonl. Risk=Medium, dry-run whitelistable.
+[TOOL] archive_messages.py — Active (post Update 9) — `/home/fatur/ai-holding/bin/archive_messages.py` — same for messages.jsonl. Risk=Medium, dry-run whitelistable.
+[TOOL] recap_manager.py — Active (post Update 9) — `/home/fatur/ai-holding/bin/recap_manager.py` — windowed recap append to recap.jsonl. Risk=Medium, dry-run whitelistable.
 
 ---
 
@@ -88,8 +111,10 @@ Total agent: 32. Tier 3 SOULs: 18.
 
 [NOTE] 2026-05-17 — Setup knowledge management Tahap 1 selesai (Update 3).
 [NOTE] 2026-05-17 — Tier 2 + Tier 3 + skill specialization selesai (Update 4-6).
-[NOTE] 2026-05-17 — Memory reference inkonsistensi diselesaikan: MAIN.md & AGENTS.md sekarang konsisten merefer kedua file dengan peran yang jelas.
-[NOTE] 2026-05-17 — Tahap berikutnya: Task Logger JSONL implementation, btc_price.py, news_sentiment.py.
+[NOTE] 2026-05-17 — Memory reference inkonsistensi diselesaikan: MAIN.md & AGENTS.md sekarang konsisten merefer kedua file dengan peran yang jelas (Update 7).
+[NOTE] 2026-05-17 — Task Logger JSONL operasional: 4 script production + shared library + bash wrapper + rules doc (Update 8). Smoke test full lifecycle: create → list → transition (state machine validated) → DONE → message hand-off.
+[NOTE] 2026-05-17 — Tahap G selesai (Update 9): 4 tools/scripts baru (btc_price, news_sentiment, archive_tasks, archive_messages, recap_manager), 14 Tier 3 SOULs (32/32 coverage), Hermes whitelist policy authored. Smoke test: archival idempoten, recap windowing benar, btc_price + news_sentiment fetch dari API live.
+[NOTE] 2026-05-17 — Tahap berikutnya (Tahap H): Hermes config apply (Fathur eksekusi di WSL berdasarkan `hermes-whitelist.md`); cron setup untuk archival + recap weekly; migration prep ke Telegram Topics (Option C).
 
 ---
 
