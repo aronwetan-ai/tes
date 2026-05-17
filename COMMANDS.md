@@ -40,6 +40,43 @@ Examples:
 @crypto.data buatkan struktur data analisis
 @crypto.report buatkan laporan market
 
+## Cross-Company Commands
+
+weekly brief
+Start the full weekly cadence: run tools → research → handoff → BrandFlow draft → QA → approval request. See `knowledge/sop/weekly-cadence.md`.
+
+handoff crypto ke brandflow
+Trigger Crypto Consultant → BrandFlow handoff for latest research. Generates handoff block per `knowledge/sop/cross-company-handoff.md`.
+
+handoff crypto ke nexusai
+Trigger Crypto Consultant → NexusAI data spec handoff for dashboard refresh.
+
+cross-qa status
+Show all pending cross-company QA requests and their SLA status.
+
+approval status
+Show all pending Fathur approval requests and their age/timeout status.
+
+weekly recap
+Generate cross-company weekly summary for Fathur. Includes: research produced, content published, QA health, tool status, Forecast Ledger entries.
+
+cek handoff aktif
+List all active (non-expired) handoff blocks across companies.
+
+kirim approval ke fathur: <summary>
+Package and send approval request to Fathur per `knowledge/sop/approval-workflow.md`. Supports batch ("batch approval minggu ini").
+
+cadence status
+Show where we are in the weekly cadence (Monday=production, Tuesday=publish, etc.) and what's on track / delayed.
+
+forecast ledger status
+Show active Forecast Ledger entries, their decay dates, and any expired entries pending review.
+
+crisis brief
+Trigger ad-hoc crisis research workflow: run tools → quick synthesis → alert Fathur. Used when extreme market event detected.
+
+---
+
 ## Main Assistant Natural Commands
 
 status semua perusahaan

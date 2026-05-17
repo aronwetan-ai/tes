@@ -78,9 +78,29 @@ Reviewed by: @crypto.research / @crypto.market / @crypto.macro
 
 ---
 
-## Cross-Company Collaboration Log
+## Cross-Company Collaboration Protocol
 
-Belum ada catatan kolaborasi cross-company yang durable. Akan ditulis di sini saat Crypto Consultant bekerja sama dengan NexusAI (mis. on-chain dashboard) atau BrandFlow (mis. translate research jadi market commentary content).
+[ARCH] 2026-05-17 — Cross-company integration infrastructure deployed. SOPs:
+- `knowledge/sop/cross-company-handoff.md` — handoff block format + type-specific templates
+- `knowledge/sop/cross-company-qa-routing.md` — auto QA triggers when our research feeds other companies
+- `knowledge/sop/approval-workflow.md` — Fathur approval gate (Tier 3 decisions only)
+- `knowledge/sop/autonomous-boundaries.md` — what runs without Fathur (most things)
+- `knowledge/sop/weekly-cadence.md` — autonomous weekly rhythm (Mon-Fri)
+
+**Crypto Consultant's role in cross-company:**
+- **Produces:** Research reports with [HANDOFF → BRANDFLOW] and [HANDOFF → NEXUSAI] blocks
+- **Receives:** Content requests from BrandFlow (`Type 5: Content Request`)
+- **QA duty:** @crypto.qa automatically reviews BrandFlow content derived from our research (Checklist A in qa-routing SOP)
+- **Data feeds:** Tools output → NexusAI dashboard API endpoints (data spec handoff)
+- **Weekly cadence:** Monday 07:00-10:00 WIB = our production window. Handoff to BrandFlow at 10:00.
+
+**Active handoff relationships:**
+- Crypto → BrandFlow: Weekly crypto brief for crypto-influencer client (voice: `companies/brandflow/clients/crypto-influencer/voice.md`)
+- Crypto → NexusAI: Dashboard data spec (7 API endpoints, see E2E-001 step-3)
+
+### Collaboration Log
+
+_Entries written here when cross-company work happens:_
 
 ---
 
