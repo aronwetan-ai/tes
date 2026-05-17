@@ -1,0 +1,46 @@
+# Cron Patterns — Common Schedules
+# Edit with: crontab -e
+# Test syntax: crontab -l
+#
+# Format: minute hour day-of-month month day-of-week command
+#         (0-59) (0-23) (1-31)       (1-12) (0-6, 0=Sun)
+#
+# Source: Adapted from SUPERAGENT v2 m4.md
+
+# === DAILY SCHEDULES ===
+
+# Every day at 08:00 — daily report
+0 8 * * * /usr/bin/python3 /opt/run/daily.py >> /var/log/daily.log 2>&1
+
+# Every day at 23:00 — backup
+0 23 * * * /opt/scripts/backup.sh >> /var/log/backup.log 2>&1
+
+# === WEEKLY SCHEDULES ===
+
+# Every Monday at 07:00 — weekly crypto brief (matches weekly-cadence.md)
+0 7 * * 1 /opt/ai-holding/bin/run_weekly_brief.sh >> /var/log/weekly.log 2>&1
+
+# Every Friday at 09:00 — weekly recap
+0 9 * * 5 /opt/ai-holding/bin/run_weekly_recap.sh >> /var/log/recap.log 2>&1
+
+# === HOURLY SCHEDULES ===
+
+# Every hour — health check
+0 * * * * /bin/bash /opt/run/health-check.sh
+
+# Every 5 minutes — short-interval monitor
+*/5 * * * * /usr/bin/node /opt/run/monitor.js
+
+# === SPECIFIC TIMES (WIB-aware, server in UTC) ===
+
+# Crypto tools refresh at 07:00 WIB = 00:00 UTC
+0 0 * * * /opt/ai-holding/bin/run_crypto_tools.sh
+
+# Approval reminder check at 13:00 WIB = 06:00 UTC
+0 6 * * * /opt/ai-holding/bin/check_pending_approvals.sh
+
+# === TIPS ===
+# - Always redirect both stdout and stderr to log: >> /var/log/<name>.log 2>&1
+# - Use absolute paths (cron PATH is minimal)
+# - Test scripts manually first: bash -x /path/to/script.sh
+# - Check cron is running: systemctl status cron
