@@ -1,9 +1,127 @@
 # AI Holding Project Summary
 
-Tanggal: 17 Mei 2026 — Update 5
+Tanggal: 17 Mei 2026 — Update 6
 Owner: Fathur
 Environment: WSL2 + Hermes + Telegram Bot + Online Provider API Key
 Repository: aronwetan-ai/tes
+
+---
+
+## Update 6 — Specialize Skill Files Per Company (17 Mei 2026)
+
+Branch: `feat/specialize-skills`
+
+### A. Tujuan
+
+Sebelum Update 6:
+- Setiap perusahaan punya 8 folder skill yang **identik isinya** (boilerplate dari template lama).
+- Skill yang tidak relevan tetap ada (mis. `devops/` di BrandFlow, `coding/` di Crypto Consultant).
+- Skill files cuma 5-baris generic — tidak bawa identitas perusahaan, tidak terhubung ke Tier 2/3 SOUL atau knowledge SOP.
+
+Update 6 menyelesaikan tiga hal:
+1. **Buang skill folder yang tidak relevan** per perusahaan.
+2. **Tulis ulang skill yang relevan** dengan konten spesifik per perusahaan, terhubung ke Tier 2/3 SOUL + knowledge SOP.
+3. **Tambah skill baru** yang dibutuhkan (mengikuti role baru dari Update 5).
+
+### B. Skill Set Final Per Perusahaan
+
+#### NexusAI (7 skills, dari 8 generic → 7 specialized)
+```
+coding/        — Backend / API / database / refactor (NexusAI flavor)
+devops/        — Deploy / CI/CD / observability / incident
+security/      — Threat model + auth + OPSEC for offensive work (NEW)
+ml-agent/      — AI agent design / prompts / evals (Karpathy-aligned, NEW)
+automation/    — JSONL pipelines / scripts / multi-agent comm
+qa/            — Code review / test plan / acceptance criteria
+uiux/          — Product UX (SaaS dashboards, dev tools, agent surfaces)
+```
+Removed: content, research, business (tidak fit untuk engineering company).
+
+#### BrandFlow (7 skills, dari 8 generic → 7 specialized)
+```
+content/       — Copy / hooks / captions / articles (BrandFlow voice)
+design/        — Visual concept / layout / type spec (NEW)
+community/     — Real-time DM/comment drafts (NEW)
+seo/           — Keyword research / on-page SEO (NEW)
+research/      — Audience / competitive / market research (commercial intel)
+automation/    — Editorial pipeline / scheduler integration / brief routing
+qa/            — Brand voice + accuracy + Boundary #4 review
+```
+Removed: coding, devops, business, uiux (tidak fit untuk marketing company).
+
+#### Crypto Consultant (7 skills, dari 8 generic → 7 specialized)
+```
+research/      — Synthesis layer + 6-layer format
+market-analysis/ — Technical / structure / cycle / dominance (NEW)
+onchain/       — Wallet flows / smart money / supply (NEW)
+macro/         — DXY / Fed / M2 / equity correlation (NEW)
+risk/          — Drawdown / sizing / tail / counterparty (NEW)
+reporting/     — Final assembly + mandatory disclaimer (NEW)
+qa/            — Methodology + fact-check + Boundary #4 enforcement
+```
+Removed: coding, devops, content, automation, uiux, business (tidak fit untuk research company).
+
+### C. Struktur Konsisten Tiap SKILL.md
+
+Setiap SKILL.md baru pakai struktur 9-section:
+
+1. Front-matter YAML (name, description, company, used_by)
+2. When to Use (concrete trigger)
+3. Default Approach / Process
+4. Rules (numbered, non-negotiable)
+5. Output Format (structured templates per task type)
+6. Channel / Domain defaults (when relevant)
+7. Cross-Skill / Cross-Agent Routing
+8. What This Skill Does NOT Cover
+9. Reference
+
+### D. Index Files Baru (3 file)
+
+```
+companies/nexusai/SKILLS.md
+companies/brandflow/SKILLS.md
+companies/crypto-consultant/SKILLS.md
+```
+
+Setiap SKILLS.md adalah index resmi: daftar active skills + primary users + skill yang dihapus + alasan + cara nambah skill baru. Berfungsi sebagai pintu masuk ke skill folder.
+
+### E. Template Update
+
+`templates/company/SKILLS.md` ditulis ulang untuk panduan operator setelah `create-company.sh`:
+- Cara review default skill set.
+- Cara hapus yang tidak relevan.
+- Cara specialize yang relevan.
+- Cara add skill baru.
+- Format front-matter standar.
+
+### F. Dampak Operasional
+
+Sebelum:
+- `@brandflow.copywriter` baca `skills/content/SKILL.md` → dapat 5 baris generic, tidak match BrandFlow voice.
+- `@nexusai.security` (role baru) tidak punya skill khusus.
+- `@crypto.market` baca skill yang sama dengan `@nexusai.coding` (literally identik).
+
+Sesudah:
+- Setiap skill membawa **company DNA**: voice, framework, rules, output format spesifik domain.
+- Skill terhubung ke Tier 3 SOUL (mention "Inherits", `used_by`).
+- Skill terhubung ke knowledge SOP (referensi explicit).
+- Cross-skill routing jelas — tidak ada overlap antara `skills/uiux` di NexusAI (product) vs `skills/design` di BrandFlow (marketing).
+
+### G. Total File Changes
+
+```
+Removed:  16 generic SKILL.md (skills folders dihapus)
+Added:    21 specialized SKILL.md (7 per company × 3)
+Added:    3 SKILLS.md index files (per company)
+Modified: 1 templates/company/SKILLS.md (operator guide)
+```
+
+### H. Yang Belum Selesai (untuk PR berikutnya)
+
+1. **Fix memory reference** — `MAIN.md` baca `MEMORY.md`, `AGENTS.md` baca `memory/global.md`. Klarifikasi peran + update root MEMORY.md.
+2. **Task Logger JSONL** — schema + writer + filter (skill `automation` di NexusAI sudah definisi schema, tinggal implementasi).
+3. **Tools tambahan** — btc_price.py, news_sentiment.py.
+4. **Tier 3 untuk role sisa** (PM, QA, Writer, Frontend, SEO, Analytics, Data, Report) — on-demand.
 
 ---
 
@@ -632,7 +750,7 @@ Nanti setelah B–F stabil.
 
 ## 9. Status Terakhir
 
-Status project: **Usable Prototype with Knowledge Layer**
+Status project: **Usable Prototype with Specialized Skills Layer**
 
 Yang sudah siap:
 ```
@@ -647,35 +765,36 @@ Yang sudah siap:
 - SOUL Tier 2 (semua 3 perusahaan, post Update 4)
 - SOUL Tier 3 (18 agent untuk role utama, post Update 5)
 - 6 role baru: security, ml, designer, community, onchain, macro
+- Skill files specialized per company (21 file, post Update 6)
+- 3 SKILLS.md index files per company (post Update 6)
 - Knowledge management lengkap (8 file aktif)
-- Template Tier-2 ready
+- Template Tier-2 + skill template ready
 - Repo bersih (no .bak, no Zone.Identifier)
 ```
 
 Yang belum:
 ```
 - Tier 3 untuk role sisa (PM, QA, Writer, Frontend, SEO, Analytics, Data, Report)
-- Skill files spesifik (saat ini boilerplate)
 - Task logger JSONL writer
 - Root MEMORY.md update agar sinkron dengan keputusan terbaru
 - btc_price.py
 - news_sentiment.py
 - Whitelist tool read-only
+- Memory reference inkonsistensi (MAIN.md vs AGENTS.md)
 ```
 
 ---
 
 ## 10. Next Immediate Action
 
-Setelah Update 5 (Tier 3 + 6 role baru) selesai, langkah berikutnya:
+Setelah Update 6 (Specialize Skills) selesai, langkah berikutnya:
 
 ```
-1. Specialize skill files — buang folder skill yang tidak relevan per perusahaan,
-   perdalam yang relevan, link ke Tier 3 SOULs.
-2. Fix memory reference + update root MEMORY.md agar sinkron.
-3. Task logger JSONL implementation.
-4. Tools tambahan: btc_price.py, news_sentiment.py.
-5. Tier 3 untuk role sisa (on-demand saat Fathur sering pakai).
+1. Fix memory reference + update root MEMORY.md agar sinkron.
+2. Task logger JSONL implementation (skill automation NexusAI sudah definisi schema).
+3. Tools tambahan: btc_price.py, news_sentiment.py.
+4. Tier 3 untuk role sisa (on-demand saat Fathur sering pakai).
+5. Whitelist tool read-only di Hermes.
 ```
 
 ---
@@ -685,8 +804,8 @@ Setelah Update 5 (Tier 3 + 6 role baru) selesai, langkah berikutnya:
 Gunakan prompt ini ke Hermes / Kiro jika ingin melanjutkan:
 
 ```text
-Baca summary.md (Update 5 section terbaru) lalu lanjutkan dari "Next Immediate Action".
-Mulai dari specialize skill files atau fix memory reference.
+Baca summary.md (Update 6 section terbaru) lalu lanjutkan dari "Next Immediate Action".
+Mulai dari fix memory reference + update root MEMORY.md.
 Pelan-pelan, satu tahap per response, tunggu konfirmasi sebelum lanjut.
 ```
 
@@ -696,9 +815,10 @@ Pelan-pelan, satu tahap per response, tunggu konfirmasi sebelum lanjut.
 
 | Branch                                          | Status   | Isi |
 |-------------------------------------------------|----------|-----|
-| `main`                                          | base     | Update 3 + 4 sudah merged |
+| `main`                                          | base     | Update 3 + 4 + 5 sudah merged |
 | `chore/quickwins-cleanup-and-knowledge-fix`     | merged   | Update 3 — cleanup + knowledge + template (PR #1) |
 | `feat/tier2-company-souls`                      | merged   | Update 4 — Tier 2 SOULs untuk 3 perusahaan (PR #2) |
-| `feat/tier3-agent-souls`                        | active   | Update 5 — Tier 3 SOULs (18) + 6 role baru |
+| `feat/tier3-agent-souls`                        | merged   | Update 5 — Tier 3 SOULs (18) + 6 role baru (PR #3) |
+| `feat/specialize-skills`                        | active   | Update 6 — Specialize 21 skill files + 3 index |
 
-Setelah branch ini di-merge, lanjut ke specialize skills atau task logger.
+Setelah branch ini di-merge, lanjut ke memory reference fix atau task logger.
