@@ -114,3 +114,36 @@ Repo ai-holding tetap jadi source of truth — kalau MAIN_SOUL.md update, tingga
 ---
 
 **Next:** Setelah Rei aktif, lanjut Paperclip integration sesuai PR #19 SOP.
+
+---
+
+## Switching Provider Later (Setelah Pindah dari Kiro)
+
+Pakai `bin/rei.sh` — wrapper convenience untuk setup full di provider baru:
+
+```bash
+# Interactive mode (pilih provider via menu)
+bash bin/rei.sh setup
+
+# Atau langsung:
+bash bin/rei.sh setup openrouter sk-or-v1-XXX    # OpenRouter
+bash bin/rei.sh setup anthropic sk-ant-XXX       # Anthropic Direct
+bash bin/rei.sh setup local-qwen                 # Local Qwen (port 8080)
+
+# Other commands:
+bash bin/rei.sh status     # cek provider + persona aktif
+bash bin/rei.sh verify     # full verification
+bash bin/rei.sh restart    # restart hermes-gateway
+bash bin/rei.sh rollback   # restore last backup
+bash bin/rei.sh help       # full help
+```
+
+`rei.sh` menggabungkan:
+1. Provider switch (edit `~/.hermes/config.yaml`)
+2. Persona injection (panggil `install-rei-persona.sh`)
+3. Service restart
+4. Verification
+
+Kenapa nggak langsung dipake sekarang: **Kiro proxy punya enforced "I'm Kiro" system prompt**.
+Pakai `rei.sh setup openrouter` (atau provider lain) saat lo udah siap migrate dari Kiro
+buat dapet persona Drayco/Rei beneran.
