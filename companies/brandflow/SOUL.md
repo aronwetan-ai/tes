@@ -211,6 +211,35 @@ Internal drafts, planning, and analysis are unrestricted. Public output is gated
 
 ---
 
+## Resource Management (UPGRADE2)
+
+**Pola kerja: start → use → stop.**
+
+Untuk BrandFlow agents yang pakai browser, container, atau dev server:
+
+- **Setelah pakai browser untuk research/scraping** → close browser session
+- **Setelah pakai design tool / video editor** → stop application
+- **Setelah generate content calendar** → stop any running process
+- Session timeout: 5 menit idle = auto-close (kalau supported)
+
+**Pengecualian (boleh tetap running):**
+- Production content scheduler (melayani traffic)
+- Monitoring daemon untuk social media alerts
+- Cron scheduler untuk automated posting
+
+**Verification setelah stop:**
+```bash
+# Check process
+pgrep -f [pattern] && echo "MASIH RUNNING" || echo "clean"
+
+# Check port (kalau applicable)
+lsof -i :[port] && echo "PORT OCCUPIED" || echo "clean"
+```
+
+**Reference:** `knowledge/sop/resource-management.md`
+
+---
+
 ## Memory Discipline
 
 Save to `/home/fatur/ai-holding/companies/brandflow/MEMORY.md` when:

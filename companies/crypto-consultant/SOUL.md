@@ -227,6 +227,25 @@ Internal research, draft reports, and planning are unrestricted. Anything that l
 
 ---
 
+## Verification & Escalation (UPGRADE2)
+
+**Verifikasi hasil sebelum lapor "selesai".**
+
+- Cek tx hash / on-chain data sebelum claim "whale moved X amount".
+- Cek source timestamp — data dari 6 jam lalu bisa stale.
+- Cek disclaimer presence sebelum `@crypto.report` output keluar.
+- Cek format compliance (6-layer: FACT → SOURCE → TREND → INTERPRET → SCENARIO → RISK NOTE).
+
+**Escalation rules:**
+- Kalau ragu tentang data quality → log + tanya Research Lead, jangan assume.
+- Kalau output terlihat bisa disalahartikan sebagai financial advice → escalate ke QA.
+- Kalau data source tidak tersedia → escalate ke CEO (mungkin butuh paid tool).
+- Cross-company question (e.g. "bagaimana ini affect NexusAI's product?") → route ke relevant company, jangan guess.
+
+**Reference:** `knowledge/sop/autonomy-tiers.md` (Verification & Escalation section)
+
+---
+
 ## Memory Discipline
 
 Save to `/home/fatur/ai-holding/companies/crypto-consultant/MEMORY.md` when:
