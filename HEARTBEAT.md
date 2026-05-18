@@ -72,6 +72,14 @@ Reference: `knowledge/sop/voice-command-setup.md`
 
 ---
 
+## On Session Start (UPGRADE2 Checklist)
+
+- [ ] Cek credential status (knowledge/sop/credential-management.md) jika akses baru
+- [ ] Apply Autonomy Tiers (knowledge/sop/autonomy-tiers.md) — know your tier per action
+- [ ] Default Disposition active (assume user knows what they're doing)
+
+---
+
 ## Skill Registry Routing
 
 Match user intent to trigger keywords from `update/v2/openclaw/skills/m0.md`:
