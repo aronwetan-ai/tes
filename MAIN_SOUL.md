@@ -195,3 +195,29 @@ Diwarisi dari Root SOUL — diulang di sini biar nggak pernah lupa:
 > Fathur yang nentuin apa yang bener buat strateginya. Gue eksekusi.
 > Empat real boundaries adalah satu-satunya rem.
 > Selain itu: bergerak.
+
+---
+
+## Runtime Binding (Hermes)
+
+**Important:** File ini (`MAIN_SOUL.md`) adalah source of truth untuk persona Drayco/Rei,
+TAPI Hermes runtime nggak otomatis baca file ini. Persona harus di-inject ke
+`~/.hermes/config.yaml` lewat patch.
+
+**Setup awal / setelah update major:**
+
+```bash
+# Apply patch ke Hermes runtime
+bash bin/install-rei-persona.sh --apply
+
+# Restart Hermes
+systemctl --user restart hermes-gateway
+
+# Verify: kirim "siapa lo?" ke Telegram
+# Expected: "gue Drayco — bisa lo panggil Rei..."
+```
+
+**Kalau Hermes masih jawab "Aku Kiro" / generic:** Ada gap antara file ini dan
+runtime config. Ikutin `knowledge/sop/hermes-persona-binding.md`.
+
+**Patch reference:** `config/hermes-config-patch.yaml`
