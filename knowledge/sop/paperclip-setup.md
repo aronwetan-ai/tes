@@ -61,6 +61,54 @@ pm2 --version           # untuk persistent running di production
 
 ---
 
+## Step 0: Cleanup Sisa Install Lama (KALAU ADA)
+
+Kalau lo sebelumnya pernah coba install Paperclip dan ada sisa state yang corrupt/broken, run cleanup script dulu:
+
+```bash
+cd ~/ai-holding
+
+# Preview dulu (lihat apa yang akan dihapus)
+bash bin/paperclip-cleanup.sh --dry-run
+
+# Apply cleanup (interactive — minta konfirmasi)
+bash bin/paperclip-cleanup.sh
+
+# Atau auto-apply (untuk scripted runs)
+bash bin/paperclip-cleanup.sh --apply
+```
+
+**Yang dibersihin:**
+- PM2 paperclip processes
+- Running paperclip / pnpm dev processes (port 3100 freed)
+- `~/.paperclip/` (data dir) — backed up dulu ke `~/.paperclip-cleanup-backup-<timestamp>/`
+- `~/paperclip-src/` (source clone) — backed up dulu (tanpa `node_modules`)
+- Global npm packages (`paperclipai`, `hermes-paperclip-adapter`)
+- pnpm store cache untuk paperclip packages
+- `paperclip:` section di `~/.hermes/config.yaml` (commented out)
+
+**Yang TIDAK dibersihin (penting!):**
+- `~/.hermes/` — Hermes runtime, persona Drayco/Rei live di sini
+- `~/ai-holding/` — repo workspace
+- `~/.agent/credentials/` — credentials lo
+- System binaries (Node, pnpm, pm2)
+
+**Skip Step 0 kalau:** lo belum pernah install Paperclip sama sekali (fresh machine). Lanjut ke Step 1.
+
+**Verify Hermes masih jalan setelah cleanup:**
+```bash
+systemctl --user restart hermes-gateway
+# Test di Telegram: kirim "siapa lo?" — expected "Gue Drayco — bisa lo panggil Rei..."
+```
+
+Kalau Hermes broken setelah cleanup, restore config:
+```bash
+ls ~/.hermes/config.yaml.pre-paperclip-cleanup-* 2>/dev/null
+# Copy backup yang paling baru kembali ke ~/.hermes/config.yaml
+```
+
+---
+
 ## Setup Strategy: Fork-and-Register (Recommended)
 
 `hermes-paperclip-adapter` adalah **external adapter plugin** — dua opsi register:
