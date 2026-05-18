@@ -18,3 +18,32 @@ __pycache__/
 tasks/archive/
 companies/*/tasks/archive/
 memory/archive/
+
+# Credentials — NEVER commit real values
+# Real values go to ~/.agent/credentials/ (WSL, outside repo)
+credentials/*.env
+credentials/*.json
+credentials/*.key
+credentials/*.pem
+credentials/*.txt
+credentials/*.yaml
+credentials/*.yml
+# Keep templates and README
+!credentials/templates/
+!credentials/README.md
+!credentials/.gitignore
+
+# Whisper model cache (large, auto-downloaded)
+.cache/
+*.whisper_cache
+
+# RTK stats DB (local only)
+*.db
+rtk_savings.db
+
+# Obsidian — workspace state (user-specific, don't commit)
+.obsidian/workspace.json
+.obsidian/cache
+.obsidian/plugins/
+# Keep: app.json (vault settings yang kita set)
+!.obsidian/app.json

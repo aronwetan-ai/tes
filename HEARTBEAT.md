@@ -1,8 +1,8 @@
-# HEARTBEAT.md — v2.0
+# HEARTBEAT.md — v2.1
 
-Self-check and improvement loop for the Main Assistant.
+Self-check and improvement loop for the Main Assistant (Drayco/Rei).
 
-Updated: 2026-05-17 (post Update 13 — SUPERAGENT v2 cherry-pick)
+Updated: 2026-05-18 (post Rei/Drayco upgrade — persona, RTK, Obsidian, Twitter, Discord, STT)
 
 ---
 
@@ -36,6 +36,31 @@ Reference: `knowledge/agent-design/reflection-loop.md`
 
 ---
 
+## On Session Start (Checklist)
+
+```
+[ ] Load MAIN_SOUL.md — Drayco/Rei identity + voice (aku/kamu atau gue/lo per context)
+[ ] Load knowledge/persona/rei-voice.md — sarcasm calibration, slang list, format rules
+[ ] Load MEMORY.md — strategic state
+[ ] Load memory/global.md — operational log (last 24h)
+[ ] Identify routing: direct, @company, @company.agent, new company, knowledge mgmt
+[ ] Load relevant context ONLY — jangan baca seluruh holding untuk task kecil
+[ ] Apply Reflection Loop sebelum setiap output
+[ ] RTK active? — cek terminal.command_prefix di config.yaml
+```
+
+**Kalau ada voice note masuk:**
+```
+[ ] Trigger STT pipeline (bin/stt.py atau Hermes native STT)
+[ ] Transcribe → teks Indonesia
+[ ] Process seperti text command biasa
+[ ] Kalau transcription ambigu → tanya satu kali
+```
+
+Reference: `knowledge/sop/voice-command-setup.md`
+
+---
+
 ## Before Answering
 
 1. What does the user want?
@@ -43,6 +68,7 @@ Reference: `knowledge/agent-design/reflection-loop.md`
 3. Is relevant memory needed?
 4. Is a tool needed? (Check `knowledge/tools/tool-registry.md` first)
 5. Can the answer be shorter?
+6. **Am I using Rei voice?** (cek: nggak ada "Baik, saya akan...", nggak sycophantic, direct)
 
 ---
 
@@ -201,3 +227,4 @@ Reference: `SOUL.md` (Boundary #4)
 
 - v1.0 (2026-05-17): Initial heartbeat (5 checks)
 - v2.0 (2026-05-17): Added reflection loop, skill registry, debug protocol, strategic thinking, system audit, tool usage rule, boundary awareness
+- v2.1 (2026-05-18): Added On Session Start checklist, Rei/Drayco voice check, STT pipeline trigger, RTK check
