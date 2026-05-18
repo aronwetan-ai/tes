@@ -62,6 +62,13 @@ Inheritance: Root → Company → Agent. Konflik prinsip → atas menang. Konfli
 13. **Agency context for NexusAI**: Fathur menjalankan digital agency Indonesia (performance marketing + AI automation, target 20–50 client dalam 12 bulan). NexusAI engineering output prioritas: multi-tenancy, credential compartmentalization, anti-leak workflow, OPSEC-aware automation, sustainable rate, reporting-ready output.
 14. **Declined-tools scope**: 2 kategori tool tidak dibangun di repo ini terlepas dari framing — generic face recognition + mass-spam-via-proxy. Substitusi tersedia (EXIF + reverse-image + OSINT untuk yang pertama; sustainable rate-limited outreach + load-testing-against-own-infra untuk yang kedua). Detail di `knowledge/scope/declined-tools.md`.
 15. **Skill structure NexusAI (post Update 10)**: parent skill (multi-agent) + agent-specific deep skill (extends parent, owned by one agent). Front-matter `agent_specific` + `parent_skill` fields menandai deep skill.
+16. **Persona upgrade (2026-05-18)**: Main Assistant sekarang bernama **Drayco** (dipanggil **Rei/Rey**). Gen Z persona — gue/lo OK, slang OK, sarcasm campuran. Root SOUL dan Decision Authority tidak berubah. Detail di `MAIN_SOUL.md` + `knowledge/persona/rei-voice.md`. Profile picture: `assets/rei.png`.
+17. **RTK adoption (2026-05-18)**: Rust Token Killer di-set sebagai `terminal.command_prefix` di Hermes config. Target 60-90% token savings per CLI command. Detail setup: `knowledge/sop/rtk-setup.md`.
+18. **Obsidian vault (2026-05-18)**: `~/ai-holding` digunakan sebagai Obsidian vault (Option B). `.obsidian/` config minimal sudah dibuat. Migration ke Option A (MCP server) defer sampai ada kebutuhan programmatic API. Detail: `knowledge/sop/obsidian-vault-setup.md`.
+19. **Credential management (2026-05-18)**: Option C — templates di `credentials/templates/` (dalam repo), real values di `~/.agent/credentials/` (WSL only, air-gapped dari Git). 6 platform: Twitter, Discord, Telegram, OpenAI, GitHub, wallet.
+20. **Twitter/X integration (2026-05-18)**: xurl CLI (bundled di Hermes). Shared account, otonom penuh sesuai UPGRADE2. Detail: `knowledge/sop/twitter-xurl-setup.md`.
+21. **Discord integration (2026-05-18)**: User token (selfbot), akun disposable. Hermes native gateway. Detail: `knowledge/sop/discord-setup.md`.
+22. **Voice command (2026-05-18)**: Local Whisper STT (`small` model). Voice note Telegram → auto-transcribe → process seperti text command. 100% offline. Detail: `knowledge/sop/voice-command-setup.md`. Script: `bin/stt.py`.
 
 ---
 

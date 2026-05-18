@@ -1,7 +1,7 @@
 # Tool Registry — AI Holding
 
-Versi: 1.4
-Update terakhir: 2026-05-17 (post Update 12 — Crypto Consultant deepening)
+Versi: 1.5
+Update terakhir: 2026-05-18 (post Rei/Drayco upgrade — RTK, xurl, Discord gateway, Whisper STT, Obsidian vault)
 Dikelola oleh: Main Assistant
 
 ---
@@ -52,7 +52,12 @@ Declined-tools scope: lihat `knowledge/scope/declined-tools.md` untuk hal yang t
 | 030 | pattern_detector.py  | Low     | Active   | Yes         | Auto            |
 | 031 | onchain_metrics.py   | Low     | Active   | Yes         | Auto            |
 || 032 | funding_rates.py     | Low     | Active   | Yes         | Auto            |
-|| 033 | llm_client.py        | Medium  | Active   | No          | User confirm    |
+| 033 | llm_client.py        | Medium  | Active   | No          | User confirm    |
+| 034 | rtk (binary)         | Low     | Active   | Yes         | Auto            |
+| 035 | xurl                 | Medium  | Active   | Read-only sub-cmds | Mixed  |
+| 036 | hermes-discord-gw    | Medium  | Active   | No          | User confirm    |
+| 037 | stt.py (Whisper)     | Low     | Active   | Yes         | Auto            |
+| 038 | obsidian-vault       | Low     | Active   | Yes         | Auto            |
 
 Note on numbering: TOOL-023 through TOOL-027 are reserved for Update 11 (BrandFlow — utm_builder, readability_check, brand_voice_lint, content_scheduler, social_monitor; PR #8 pending merge to main). Update 12 (Crypto Consultant) takes 028-032. Update 13 (SUPERAGENT v2 cherry-pick) takes 033. When PR #8 merges, the table sections will conflict-merge cleanly.
 
@@ -607,6 +612,104 @@ result = call_llm("Halo", provider="anthropic")
 ```
 
 Reference: `knowledge/ml/llm-providers.md` (provider selection guide), `update/v2/openclaw/skills/m7.md` (source).
+
+---
+
+### TOOL-034 — RTK (Rust Token Killer)
+
+Name        : rtk (binary)
+Path        : /usr/local/bin/rtk
+Command     : rtk <any-cli-command>  OR  <command> | rtk
+Purpose     : CLI proxy yang compress output terminal 60–90% sebelum masuk context window Hermes
+Output      : Compressed version dari original command output (lossless + configurable lossy)
+Used by     : Main Assistant (Drayco/Rei), semua agent yang execute shell commands
+Risk        : Low — read-only filter, fail-safe fallback ke raw output, exit code preserved
+Status      : Active (post Rei/Drayco upgrade 2026-05-18)
+Whitelisted : Yes — read-only filter, zero mutation
+Approval    : Auto
+Depends on  : Rust binary (single binary, zero deps). Install: `cargo install rtk` atau binary download.
+
+Config: `~/.config/rtk/config.toml`
+Stats: `rtk gain` (SQLite local, 90-day retention)
+Hermes integration: `terminal.command_prefix: "rtk"` di config.yaml
+Reference: `knowledge/sop/rtk-setup.md`
+
+---
+
+### TOOL-035 — xurl (X/Twitter CLI)
+
+Name        : xurl (npm package)
+Path        : $(npm root -g)/@xdevplatform/xurl/bin/xurl
+Command     : xurl <subcommand> [args]
+Purpose     : Official X Developer Platform CLI untuk X API v2 — post, search, DM, media, timeline
+Output      : JSON ke stdout
+Used by     : @brandflow.social, @brandflow.community, @crypto.research
+Risk        : Medium — write operations (post, DM, like) affect public X account
+Status      : Active (post Rei/Drayco upgrade 2026-05-18)
+Whitelisted : Read-only sub-commands (search, lookup, timeline) = Auto; Write sub-commands (tweet create, dm create, like) = User confirm
+Approval    : Mixed per sub-command. Boundary #4 apply untuk public posting.
+Depends on  : Node.js, npm. Credentials: `~/.agent/credentials/twitter.env` atau `~/.xurl/config.json`
+
+Hermes bundled skill: `skills/social-media/xurl` (auto-loaded)
+Reference: `knowledge/sop/twitter-xurl-setup.md`
+
+---
+
+### TOOL-036 — Hermes Discord Gateway
+
+Name        : hermes gateway (Discord mode)
+Path        : (Hermes internal — via config.yaml discord section)
+Command     : hermes gateway  [with DISCORD_TOKEN set]
+Purpose     : Native Discord presence untuk Drayco/Rei — receive/send messages, react, thread management
+Output      : Incoming messages routed ke Hermes; outgoing responses ke Discord
+Used by     : Main Assistant (Drayco/Rei)
+Risk        : Medium — user token (selfbot), write to Discord channels
+Status      : Active (post Rei/Drayco upgrade 2026-05-18)
+Whitelisted : No — external messaging action
+Approval    : User confirm untuk channel posting; Hermes bisa auto-respond dalam thread yang sudah aktif
+Depends on  : DISCORD_TOKEN env var. Credentials: `~/.agent/credentials/discord.env`
+
+Reference: `knowledge/sop/discord-setup.md`
+
+---
+
+### TOOL-037 — Local Whisper STT
+
+Name        : stt.py (via faster-whisper)
+Path        : /home/fatur/ai-holding/bin/stt.py
+Command     : python3 /home/fatur/ai-holding/bin/stt.py <audio_file>
+Purpose     : Transkripsi voice note Telegram → teks Indonesia, 100% offline (local Whisper)
+Output      : Teks transkripsi ke stdout
+Used by     : Main Assistant (Drayco/Rei) — pipeline voice command dari Telegram
+Risk        : Low — read-only local file processing, no network call, no mutation
+Status      : Active (post Rei/Drayco upgrade 2026-05-18)
+Whitelisted : Yes — local only, no external call
+Approval    : Auto
+Depends on  : faster-whisper (pip), ffmpeg (apt), Whisper model `small` (~465MB di `~/.cache/huggingface/hub/`)
+
+Model: small (recommended) — balance speed vs Indonesian accuracy
+Language hint: id (explicit Indonesian)
+Hermes config: `stt.provider: local`, `stt.local.model: small`
+Reference: `knowledge/sop/voice-command-setup.md`
+
+---
+
+### TOOL-038 — Obsidian Vault (Option B)
+
+Name        : obsidian-vault (folder-based)
+Path        : /home/fatur/ai-holding/ (the vault IS the repo folder)
+Command     : (tidak ada command — Obsidian app membaca folder langsung)
+Purpose     : GUI knowledge management untuk `~/ai-holding` — interlinked notes, search, graph view
+Output      : Obsidian app reads/writes markdown files
+Used by     : Fathur (manual editing dari app), agen (baca file seperti biasa)
+Risk        : Low — baca/tulis markdown yang sama seperti git workflow
+Status      : Active (post Rei/Drayco upgrade 2026-05-18)
+Whitelisted : Yes — sama dengan membaca/menulis markdown file
+Approval    : Auto (sama seperti file edit biasa)
+Depends on  : Obsidian app (https://obsidian.md), `.obsidian/` config folder
+
+Migration path ke Option A (MCP server): defer — trigger saat butuh programmatic vault API
+Reference: `knowledge/sop/obsidian-vault-setup.md`
 
 ---
 

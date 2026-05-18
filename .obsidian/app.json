@@ -1,0 +1,18 @@
+{
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "memory",
+  "attachmentFolderPath": "assets",
+  "defaultViewMode": "source",
+  "showLineNumber": true,
+  "readableLineLength": true,
+  "strictLineBreaks": false,
+  "foldHeading": false,
+  "foldIndent": true,
+  "showFrontmatter": true,
+  "allowIframesByDefault": false,
+  "useMarkdownLinks": true,
+  "spellcheck": false,
+  "spellcheckLanguages": ["id", "en"],
+  "livePreview": true
+}
