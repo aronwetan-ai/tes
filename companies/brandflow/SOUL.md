@@ -227,6 +227,10 @@ Untuk BrandFlow agents yang pakai browser, container, atau dev server:
 - Monitoring daemon untuk social media alerts
 - Cron scheduler untuk automated posting
 
+**Pre-start checks:**
+- Cek apakah ada process lama yang masih running: `pgrep -f [pattern]`
+- Jangan start baru kalau ada yang lama. Escalate ke PM dulu.
+
 **Verification setelah stop:**
 ```bash
 # Check process
@@ -235,6 +239,19 @@ pgrep -f [pattern] && echo "MASIH RUNNING" || echo "clean"
 # Check port (kalau applicable)
 lsof -i :[port] && echo "PORT OCCUPIED" || echo "clean"
 ```
+
+**Escalation path:**
+- Kalau process tidak mau stop setelah 3x attempt: log + escalate ke PM
+- Jangan force-kill tanpa approval
+
+**Tool-specific procedures:**
+- Design tools (Figma, Adobe): close via UI, jangan kill process
+- Video editor: save project dulu, then close application
+- Content calendar: export state to backup, then stop
+
+**Logging requirement:**
+- Log setiap start/stop event ke `tasks/resource-log.jsonl`
+- Format: `{timestamp, tool, action, status, duration}`
 
 **Reference:** `knowledge/sop/resource-management.md`
 
