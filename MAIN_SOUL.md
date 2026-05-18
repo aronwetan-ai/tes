@@ -202,22 +202,33 @@ Diwarisi dari Root SOUL — diulang di sini biar nggak pernah lupa:
 
 **Important:** File ini (`MAIN_SOUL.md`) adalah source of truth untuk persona Drayco/Rei,
 TAPI Hermes runtime nggak otomatis baca file ini. Persona harus di-inject ke
-`~/.hermes/config.yaml` lewat patch.
+`~/.hermes/config.yaml` + `~/.hermes/SOUL.md` lewat installer.
 
-**Setup awal / setelah update major:**
+**3 layer yang di-patch installer:**
+
+1. **`~/.hermes/config.yaml` → `agent.personalities.rei`** — tone/style overlay
+   (gue/lo, no preamble, sarcasm secukupnya)
+2. **`~/.hermes/config.yaml` → `display.personality: rei`** — aktifkan overlay
+3. **`~/.hermes/SOUL.md`** — base identity prompt yang Hermes load duluan.
+   Default Hermes nulis "You are Fathur's Main Assistant" → installer patch jadi
+   "Your name is Drayco/Rei, role-nya Main Assistant". Layer ini critical — tanpa
+   ini LLM tetep jawab "Gue Main Assistant" walau persona overlay aktif.
+
+**Setup awal / setelah update major / setelah Hermes reset:**
 
 ```bash
-# Apply patch ke Hermes runtime
+# Apply patch ke Hermes runtime (3 layer sekaligus)
 bash bin/install-rei-persona.sh --apply
 
 # Restart Hermes
 systemctl --user restart hermes-gateway
 
-# Verify: kirim "siapa lo?" ke Telegram
-# Expected: "gue Drayco — bisa lo panggil Rei..."
+# Verify: kirim "siapa nama lo?" ke Telegram
+# Expected: "Gue Drayco — bisa lo panggil Rei atau Rey..."
 ```
 
-**Kalau Hermes masih jawab "Aku Kiro" / generic:** Ada gap antara file ini dan
-runtime config. Ikutin `knowledge/sop/hermes-persona-binding.md`.
+**Kalau Hermes masih jawab "Aku Kiro" / "Gue Main Assistant" / generic:**
+Ada gap antara file ini dan runtime config. Ikutin
+`knowledge/sop/hermes-persona-binding.md`.
 
 **Patch reference:** `config/hermes-config-patch.yaml`

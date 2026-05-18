@@ -4,7 +4,10 @@
 #
 # PROBLEM 1: Hermes nggak otomatis baca MAIN_SOUL.md → default jadi "Aku Kiro"
 # PROBLEM 2: Hermes resume session dari ~/.hermes/sessions/ → context "Kiro" persist
-# SOLUTION: Inject persona "rei" ke ~/.hermes/config.yaml + clear sessions/memory
+# PROBLEM 3: ~/.hermes/SOUL.md punya identity "You are Fathur's Main Assistant"
+#            → LLM jawab "Gue Main Assistant" bukan "Gue Drayco" walau persona block ada
+# SOLUTION: Inject persona "rei" ke ~/.hermes/config.yaml + sync identity ke
+#           ~/.hermes/SOUL.md + clear sessions/memory
 #
 # Usage:
 #   bash bin/install-rei-persona.sh           # interactive mode (recommended)
@@ -16,6 +19,7 @@
 set -euo pipefail
 
 HERMES_CONFIG="${HOME}/.hermes/config.yaml"
+HERMES_SOUL="${HOME}/.hermes/SOUL.md"
 HERMES_SESSIONS="${HOME}/.hermes/sessions"
 HERMES_MEMORY="${HOME}/.hermes/memory"
 HOLDING_ROOT="${HOME}/ai-holding"
@@ -73,27 +77,39 @@ echo ""
 echo "[2/6] Detecting current Hermes state..."
 
 CURRENT_PERSONA=$(awk '/^display:/{flag=1; next} flag && /personality:/{print $2; exit}' "$HERMES_CONFIG" | tr -d '"' || echo "unknown")
-HAS_REI_PERSONA=$(grep -c "^    rei:" "$HERMES_CONFIG" 2>/dev/null || echo "0")
+HAS_REI_PERSONA=$(grep -c "^    rei:" "$HERMES_CONFIG" 2>/dev/null) || HAS_REI_PERSONA=0
 
 # Detect Kiro residue di sessions
 KIRO_SESSIONS=0
 if [[ -d "$HERMES_SESSIONS" ]]; then
-  KIRO_SESSIONS=$(grep -ril "Aku.*Kiro\|\"Kiro\"" "$HERMES_SESSIONS" 2>/dev/null | wc -l || echo "0")
+  KIRO_SESSIONS=$(grep -ril "Aku.*Kiro\|\"Kiro\"" "$HERMES_SESSIONS" 2>/dev/null | wc -l)
 fi
 
 # Detect typo "Aku Kir" di config (bug from previous run)
-HAS_TYPO=$(grep -c "Aku Kir\"" "$HERMES_CONFIG" 2>/dev/null || echo "0")
+HAS_TYPO=$(grep -c 'Aku Kir"' "$HERMES_CONFIG" 2>/dev/null) || HAS_TYPO=0
+
+# Detect ~/.hermes/SOUL.md identity layer (PROBLEM 3)
+SOUL_NEEDS_PATCH=0
+if [[ -f "$HERMES_SOUL" ]]; then
+  if grep -q "^You are Fathur's Main Assistant" "$HERMES_SOUL" 2>/dev/null; then
+    SOUL_NEEDS_PATCH=1
+  fi
+  if ! grep -q "Your name is \*\*Drayco\*\*" "$HERMES_SOUL" 2>/dev/null; then
+    SOUL_NEEDS_PATCH=1
+  fi
+fi
 
 echo "  Current display.personality: ${CURRENT_PERSONA}"
 echo "  Has 'rei' persona block: $([ "$HAS_REI_PERSONA" -gt 0 ] && echo "YES" || echo "NO")"
 echo "  Sessions with 'Kiro' residue: ${KIRO_SESSIONS}"
 echo "  Config has typo 'Aku Kir': $([ "$HAS_TYPO" -gt 0 ] && echo "YES (will fix)" || echo "NO")"
+echo "  ~/.hermes/SOUL.md identity: $([ "$SOUL_NEEDS_PATCH" -gt 0 ] && echo "needs Drayco patch" || echo "OK")"
 echo ""
 
 # ─── Step 3: Show changes ───
 echo "[3/6] Perubahan yang akan dibuat:"
 echo ""
-echo -e "  ${YELLOW}A.${NC} Backup config + sessions + memory → $BACKUP_DIR"
+echo -e "  ${YELLOW}A.${NC} Backup config + sessions + memory + SOUL.md → $BACKUP_DIR"
 echo -e "  ${YELLOW}B.${NC} (Re)inject persona 'rei' di agent.personalities (overwrite untuk fix typo)"
 echo -e "  ${YELLOW}C.${NC} Set display.personality: rei"
 if [[ "$KEEP_SESSIONS" == false ]]; then
@@ -103,6 +119,11 @@ else
 fi
 echo -e "  ${YELLOW}E.${NC} Clear residue 'Kiro' di memory (kalau ada)"
 echo -e "  ${YELLOW}F.${NC} Tighten session_reset config (idle: 60min was: 1440min)"
+if [[ "$SOUL_NEEDS_PATCH" -gt 0 ]]; then
+  echo -e "  ${YELLOW}G.${NC} Patch ~/.hermes/SOUL.md identity → bind nama Drayco/Rei (THE real fix)"
+else
+  echo -e "  ${YELLOW}G.${NC} ~/.hermes/SOUL.md identity sudah OK (skip)"
+fi
 echo ""
 
 if [[ "$DRY_RUN" == true ]]; then
@@ -125,6 +146,7 @@ echo ""
 echo "[4/6] Creating backup..."
 mkdir -p "$BACKUP_DIR"
 cp "$HERMES_CONFIG" "$BACKUP_DIR/config.yaml"
+[[ -f "$HERMES_SOUL" ]] && cp "$HERMES_SOUL" "$BACKUP_DIR/SOUL.md" 2>/dev/null || true
 [[ -d "$HERMES_SESSIONS" ]] && cp -r "$HERMES_SESSIONS" "$BACKUP_DIR/sessions" 2>/dev/null || true
 [[ -d "$HERMES_MEMORY" ]] && cp -r "$HERMES_MEMORY" "$BACKUP_DIR/memory" 2>/dev/null || true
 echo -e "  ${GREEN}✓${NC} Backup: $BACKUP_DIR"
@@ -226,6 +248,47 @@ else
   echo -e "  ${GREEN}✓${NC} Memory dir belum ada (clean)"
 fi
 
+# 5d. Patch ~/.hermes/SOUL.md identity (THE real fix untuk nama Drayco)
+# Tanpa ini, LLM jawab "Gue Main Assistant" walau persona block 'rei' udah aktif —
+# karena ~/.hermes/SOUL.md di-load Hermes sebagai base identity prompt yang
+# overrule personality overlay.
+if [[ -f "$HERMES_SOUL" ]] && [[ "$SOUL_NEEDS_PATCH" -gt 0 ]]; then
+  python3 <<PYEOF
+from pathlib import Path
+
+soul_path = Path("$HERMES_SOUL")
+text = soul_path.read_text()
+
+OLD_LINE = "You are Fathur's Main Assistant for the AI Holding system."
+
+NEW_BLOCK = """Your name is **Drayco** — Fathur calls you **Rei** or **Rey**.
+Your role is **Main Assistant** for the AI Holding system.
+
+When asked "siapa lo / siapa kamu / siapa nama lo / what's your name":
+Answer: "Gue Drayco — bisa lo panggil Rei atau Rey. Personal assistant lo untuk AI Holding."
+
+NEVER answer with "Belum ada nama" — your name is Drayco.
+NEVER identify yourself as just "Main Assistant" when asked your name — that is your ROLE, not your NAME.
+NEVER identify as "Kiro" or generic "AI assistant".
+
+You are Fathur's Main Assistant for the AI Holding system."""
+
+if OLD_LINE in text and "Your name is **Drayco**" not in text:
+    text = text.replace(OLD_LINE, NEW_BLOCK, 1)
+    soul_path.write_text(text)
+    print("  ✓ ~/.hermes/SOUL.md identity patched (Drayco/Rei bound)")
+elif "Your name is **Drayco**" in text:
+    print("  ✓ ~/.hermes/SOUL.md identity sudah OK (skip)")
+else:
+    print("  ⚠ ~/.hermes/SOUL.md format tak terduga — skip patch")
+    print("    Manual fix: tambahin identity Drayco/Rei di top file")
+PYEOF
+elif [[ ! -f "$HERMES_SOUL" ]]; then
+  echo -e "  ${YELLOW}⚠${NC} ~/.hermes/SOUL.md belum ada — skip identity patch"
+else
+  echo -e "  ${GREEN}✓${NC} ~/.hermes/SOUL.md identity sudah OK"
+fi
+
 echo ""
 
 # ─── Step 6: Final instructions ───
@@ -245,6 +308,7 @@ echo "       Expected: empty"
 echo ""
 echo -e "  ${YELLOW}Rollback${NC} (kalau perlu):"
 echo "       cp $BACKUP_DIR/config.yaml ~/.hermes/config.yaml"
+echo "       [ -f $BACKUP_DIR/SOUL.md ] && cp $BACKUP_DIR/SOUL.md ~/.hermes/SOUL.md"
 echo "       cp -r $BACKUP_DIR/sessions ~/.hermes/sessions"
 echo "       systemctl --user restart hermes-gateway"
 echo ""
