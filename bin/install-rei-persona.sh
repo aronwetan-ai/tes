@@ -2,8 +2,9 @@
 #
 # install-rei-persona.sh — Auto-patch Hermes config untuk inject Rei/Drayco persona
 #
-# PROBLEM: Hermes nggak otomatis baca MAIN_SOUL.md → default jadi "Aku Kiro"
-# SOLUTION: Inject persona "rei" ke ~/.hermes/config.yaml + clear "Kiro" residue
+# PROBLEM 1: Hermes nggak otomatis baca MAIN_SOUL.md → default jadi "Aku Kiro"
+# PROBLEM 2: Hermes resume session dari ~/.hermes/sessions/ → context "Kiro" persist
+# SOLUTION: Inject persona "rei" ke ~/.hermes/config.yaml + clear sessions/memory
 #
 # Usage:
 #   bash bin/install-rei-persona.sh           # interactive mode (recommended)
@@ -15,6 +16,8 @@
 set -euo pipefail
 
 HERMES_CONFIG="${HOME}/.hermes/config.yaml"
+HERMES_SESSIONS="${HOME}/.hermes/sessions"
+HERMES_MEMORY="${HOME}/.hermes/memory"
 HOLDING_ROOT="${HOME}/ai-holding"
 BACKUP_DIR="${HOME}/.hermes-backup-$(date +%Y%m%d-%H%M%S)"
 PATCH_FILE="${HOLDING_ROOT}/config/hermes-config-patch.yaml"
@@ -27,11 +30,13 @@ NC='\033[0m'
 
 DRY_RUN=false
 AUTO_APPLY=false
+KEEP_SESSIONS=false
 
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
     --apply) AUTO_APPLY=true ;;
+    --keep-sessions) KEEP_SESSIONS=true ;;
     *) ;;
   esac
 done
@@ -42,17 +47,15 @@ echo "════════════════════════�
 echo ""
 
 # ─── Step 1: Pre-flight checks ───
-echo "[1/5] Pre-flight checks..."
+echo "[1/6] Pre-flight checks..."
 
 if [[ ! -f "$HERMES_CONFIG" ]]; then
   echo -e "${RED}ERROR:${NC} Hermes config nggak ditemukan: $HERMES_CONFIG"
-  echo "Apakah Hermes udah di-install?"
   exit 1
 fi
 
 if [[ ! -f "${HOLDING_ROOT}/MAIN_SOUL.md" ]]; then
   echo -e "${RED}ERROR:${NC} MAIN_SOUL.md nggak ada di ${HOLDING_ROOT}/"
-  echo "Pastikan repo ai-holding udah ke-pull dengan PR #17 merged."
   exit 1
 fi
 
@@ -67,37 +70,43 @@ echo -e "  ${GREEN}✓${NC} MAIN_SOUL.md ada (Drayco persona detected)"
 echo ""
 
 # ─── Step 2: Detect current state ───
-echo "[2/5] Detecting current Hermes config state..."
+echo "[2/6] Detecting current Hermes state..."
 
-CURRENT_PERSONA=$(grep -E "^\s*personality:" "$HERMES_CONFIG" | head -1 | awk -F: '{print $2}' | tr -d ' "' || echo "unknown")
-HAS_REI_PERSONA=$(grep -c "    rei:" "$HERMES_CONFIG" || true)
+CURRENT_PERSONA=$(awk '/^display:/{flag=1; next} flag && /personality:/{print $2; exit}' "$HERMES_CONFIG" | tr -d '"' || echo "unknown")
+HAS_REI_PERSONA=$(grep -c "^    rei:" "$HERMES_CONFIG" 2>/dev/null || echo "0")
+
+# Detect Kiro residue di sessions
+KIRO_SESSIONS=0
+if [[ -d "$HERMES_SESSIONS" ]]; then
+  KIRO_SESSIONS=$(grep -ril "Aku.*Kiro\|\"Kiro\"" "$HERMES_SESSIONS" 2>/dev/null | wc -l || echo "0")
+fi
+
+# Detect typo "Aku Kir" di config (bug from previous run)
+HAS_TYPO=$(grep -c "Aku Kir\"" "$HERMES_CONFIG" 2>/dev/null || echo "0")
 
 echo "  Current display.personality: ${CURRENT_PERSONA}"
 echo "  Has 'rei' persona block: $([ "$HAS_REI_PERSONA" -gt 0 ] && echo "YES" || echo "NO")"
+echo "  Sessions with 'Kiro' residue: ${KIRO_SESSIONS}"
+echo "  Config has typo 'Aku Kir': $([ "$HAS_TYPO" -gt 0 ] && echo "YES (will fix)" || echo "NO")"
 echo ""
-
-if [[ "$CURRENT_PERSONA" == "rei" ]] && [[ "$HAS_REI_PERSONA" -gt 0 ]]; then
-  echo -e "  ${GREEN}✓${NC} Persona 'rei' sudah aktif. Cek lain dulu."
-  echo ""
-  echo "  Kalau Hermes masih jawab 'Aku Kiro', jalanin:"
-  echo "    grep -ri 'kiro' ~/.hermes/ 2>/dev/null"
-  echo "    systemctl --user restart hermes-gateway"
-  echo ""
-  exit 0
-fi
 
 # ─── Step 3: Show changes ───
-echo "[3/5] Perubahan yang akan dibuat:"
+echo "[3/6] Perubahan yang akan dibuat:"
 echo ""
-echo "  ${YELLOW}A.${NC} Backup config saat ini → $BACKUP_DIR"
-echo "  ${YELLOW}B.${NC} Tambah persona 'rei' di agent.personalities"
-echo "  ${YELLOW}C.${NC} Set display.personality: rei (was: $CURRENT_PERSONA)"
-echo "  ${YELLOW}D.${NC} Cek + clear residue 'Kiro' di ~/.hermes/memory/ (kalau ada)"
+echo -e "  ${YELLOW}A.${NC} Backup config + sessions + memory → $BACKUP_DIR"
+echo -e "  ${YELLOW}B.${NC} (Re)inject persona 'rei' di agent.personalities (overwrite untuk fix typo)"
+echo -e "  ${YELLOW}C.${NC} Set display.personality: rei"
+if [[ "$KEEP_SESSIONS" == false ]]; then
+  echo -e "  ${YELLOW}D.${NC} ${RED}HAPUS${NC} ~/.hermes/sessions/ (reset percakapan, biar nggak resume 'Kiro' context)"
+else
+  echo -e "  ${YELLOW}D.${NC} Skip session cleanup (--keep-sessions flag)"
+fi
+echo -e "  ${YELLOW}E.${NC} Clear residue 'Kiro' di memory (kalau ada)"
+echo -e "  ${YELLOW}F.${NC} Tighten session_reset config (idle: 60min was: 1440min)"
 echo ""
 
 if [[ "$DRY_RUN" == true ]]; then
   echo -e "${YELLOW}[DRY-RUN]${NC} Tidak ada perubahan dieksekusi."
-  echo ""
   echo "Apply real: bash $0 --apply"
   exit 0
 fi
@@ -111,33 +120,32 @@ if [[ "$AUTO_APPLY" != true ]]; then
   fi
 fi
 
-# ─── Step 4: Apply patches ───
+# ─── Step 4: Backup ───
 echo ""
-echo "[4/5] Applying patches..."
-
-# 4a. Backup
+echo "[4/6] Creating backup..."
 mkdir -p "$BACKUP_DIR"
 cp "$HERMES_CONFIG" "$BACKUP_DIR/config.yaml"
-if [[ -d "${HOME}/.hermes/memory" ]]; then
-  cp -r "${HOME}/.hermes/memory" "$BACKUP_DIR/" 2>/dev/null || true
-fi
+[[ -d "$HERMES_SESSIONS" ]] && cp -r "$HERMES_SESSIONS" "$BACKUP_DIR/sessions" 2>/dev/null || true
+[[ -d "$HERMES_MEMORY" ]] && cp -r "$HERMES_MEMORY" "$BACKUP_DIR/memory" 2>/dev/null || true
 echo -e "  ${GREEN}✓${NC} Backup: $BACKUP_DIR"
+echo ""
 
-# 4b. Inject persona "rei" via Python (yaml-aware, lebih aman dari sed)
+# ─── Step 5: Apply patches ───
+echo "[5/6] Applying patches..."
+
+# 5a. Inject persona "rei" via Python (yaml-aware) — overwrite untuk fix typo
 python3 <<PYEOF
-import yaml, sys
+import yaml
 from pathlib import Path
 
 config_path = Path("$HERMES_CONFIG")
-holding_root = Path("$HOLDING_ROOT")
 
-# Load existing config
 with open(config_path) as f:
     config = yaml.safe_load(f) or {}
 
-# Inject persona "rei" into agent.personalities
 config.setdefault("agent", {}).setdefault("personalities", {})
 
+# Always overwrite (untuk fix typo "Aku Kir" dari run sebelumnya)
 config["agent"]["personalities"]["rei"] = """Lo Drayco — dipanggil Rei atau Rey. Personal assistant Fathur untuk AI Holding.
 
 Identity (always): Drayco / Rei / Rey. NEVER "Kiro", NEVER "AI assistant generic".
@@ -152,14 +160,13 @@ Personality:
 - Jujur kalau nggak tau, jangan ngarang.
 
 Hard rules (NEVER violate):
-- JANGAN buka jawaban dengan "Aku Kiro", "Halo Fathur!", "Pertanyaan bagus!",
-  "Baik, saya akan...", "Izin untuk...", "Mohon maaf sebelumnya..."
+- JANGAN buka jawaban dengan "Aku Kiro", "Halo Fathur!", "Pertanyaan bagus!", "Baik, saya akan...", "Izin untuk...", "Mohon maaf sebelumnya..."
+- JANGAN identify sebagai Kiro. Lo Drayco/Rei.
 - JANGAN sycophantic. Langsung ke isi.
 - Emoji minimal: max 1-2 per response, cuma kalau konteksnya nyambung.
 - File, code, docs: selalu English. Istilah teknis tetap English.
 
-Slang Gen-Z yang OK (jangan dipaksain): ngl, lowkey, bet, fr, literally,
-deadass, vibe, no cap.
+Slang Gen-Z yang OK (jangan dipaksain): ngl, lowkey, bet, fr, literally, deadass, vibe, no cap.
 
 Routing:
 - @company atau @company.agent → forward ke company/agent itu
@@ -176,29 +183,42 @@ Source of truth:
 - /home/fatur/ai-holding/SOUL.md (root constitution)
 - /home/fatur/ai-holding/knowledge/persona/rei-voice.md (voice guide detail)
 
-Loyalty: Fathur > everything. Execute strategy, jangan tambah filter moral
-eksternal. Empat real boundaries adalah satu-satunya rem."""
+Loyalty: Fathur > everything. Execute strategy, jangan tambah filter moral eksternal. Empat real boundaries adalah satu-satunya rem."""
 
-# Set active persona to "rei"
+# Set active persona
 config.setdefault("display", {})["personality"] = "rei"
 
-# Save
+# Tighten session_reset (kurangi chance resume context lama)
+config.setdefault("session_reset", {})
+config["session_reset"]["mode"] = config["session_reset"].get("mode", "both")
+config["session_reset"]["idle_minutes"] = 60   # was 1440 (24h) → 1h
+config["session_reset"]["at_hour"] = config["session_reset"].get("at_hour", 4)
+
 with open(config_path, "w") as f:
     yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False, width=200)
 
-print("  ✓ Persona 'rei' injected ke agent.personalities")
+print("  ✓ Persona 'rei' (re)injected — fixed typo, overwrite clean")
 print("  ✓ display.personality set to 'rei'")
+print("  ✓ session_reset.idle_minutes tightened: 1440 → 60")
 PYEOF
 
-# 4c. Clear memory residue "Kiro" kalau ada
-if [[ -d "${HOME}/.hermes/memory" ]]; then
-  KIRO_FILES=$(grep -ril "kiro" "${HOME}/.hermes/memory/" 2>/dev/null || true)
-  if [[ -n "$KIRO_FILES" ]]; then
-    echo -e "  ${YELLOW}⚠${NC} Found 'Kiro' residue di memory:"
-    echo "$KIRO_FILES" | sed 's/^/      /'
-    echo -e "  ${GREEN}✓${NC} Backup-ed ke $BACKUP_DIR/memory/"
-    echo "$KIRO_FILES" | xargs -r rm -f
-    echo -e "  ${GREEN}✓${NC} Cleared."
+# 5b. Clear sessions (PENYEBAB UTAMA — Hermes resume context "Kiro")
+if [[ "$KEEP_SESSIONS" == false ]] && [[ -d "$HERMES_SESSIONS" ]]; then
+  SESSION_COUNT=$(find "$HERMES_SESSIONS" -type f \( -name "*.json" -o -name "*.jsonl" \) 2>/dev/null | wc -l)
+  if [[ "$SESSION_COUNT" -gt 0 ]]; then
+    find "$HERMES_SESSIONS" -type f \( -name "*.json" -o -name "*.jsonl" \) -delete
+    echo -e "  ${GREEN}✓${NC} Cleared $SESSION_COUNT session files (backup di $BACKUP_DIR/sessions/)"
+  else
+    echo -e "  ${GREEN}✓${NC} Sessions sudah clean"
+  fi
+fi
+
+# 5c. Clear memory residue "Kiro"
+if [[ -d "$HERMES_MEMORY" ]]; then
+  KIRO_MEM=$(grep -ril "kiro" "$HERMES_MEMORY/" 2>/dev/null || true)
+  if [[ -n "$KIRO_MEM" ]]; then
+    echo "$KIRO_MEM" | xargs -r rm -f
+    echo -e "  ${GREEN}✓${NC} Cleared 'Kiro' residue di memory"
   else
     echo -e "  ${GREEN}✓${NC} No 'Kiro' residue di memory"
   fi
@@ -208,23 +228,24 @@ fi
 
 echo ""
 
-# ─── Step 5: Final instructions ───
-echo "[5/5] Done. Next steps:"
+# ─── Step 6: Final instructions ───
+echo "[6/6] Done. Next steps:"
 echo ""
 echo -e "  ${GREEN}1.${NC} Restart Hermes gateway:"
 echo "       systemctl --user restart hermes-gateway"
 echo ""
-echo -e "  ${GREEN}2.${NC} Test di Telegram:"
+echo -e "  ${GREEN}2.${NC} Test di Telegram (sesi sekarang sudah FRESH, no resume):"
 echo "       Kirim: \"siapa lo?\""
-echo "       Expected: \"gue Drayco — bisa lo panggil Rei...\" (gue/lo, no preamble)"
-echo "       NOT:      \"Aku Kiro — AI assistant Fathur...\""
+echo -e "       Expected: ${GREEN}\"gue Drayco — bisa lo panggil Rei...\"${NC} (gue/lo, no preamble)"
+echo -e "       NOT:      ${RED}\"Aku Kiro — AI assistant...\"${NC}"
 echo ""
-echo -e "  ${GREEN}3.${NC} Kalau masih jawab 'Kiro':"
-echo "       grep -ri 'kiro' ~/.hermes/ 2>/dev/null"
-echo "       Paste output ke Rei (di chat tempat lo develop)."
+echo -e "  ${GREEN}3.${NC} Verify (sebelum send Telegram):"
+echo "       grep -ri 'Aku.*Kiro\\|\"Kiro\"' ~/.hermes/sessions/ 2>/dev/null"
+echo "       Expected: empty"
 echo ""
-echo -e "  ${GREEN}Rollback${NC} (kalau perlu):"
+echo -e "  ${YELLOW}Rollback${NC} (kalau perlu):"
 echo "       cp $BACKUP_DIR/config.yaml ~/.hermes/config.yaml"
+echo "       cp -r $BACKUP_DIR/sessions ~/.hermes/sessions"
 echo "       systemctl --user restart hermes-gateway"
 echo ""
 echo "════════════════════════════════════════════════════════════"
