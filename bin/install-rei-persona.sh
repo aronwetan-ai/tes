@@ -80,9 +80,11 @@ CURRENT_PERSONA=$(awk '/^display:/{flag=1; next} flag && /personality:/{print $2
 HAS_REI_PERSONA=$(grep -c "^    rei:" "$HERMES_CONFIG" 2>/dev/null) || HAS_REI_PERSONA=0
 
 # Detect Kiro residue di sessions
+# NOTE: grep -ril exit code 1 kalau no match. Dibalut subshell + `|| true`
+# supaya pipefail nggak trigger set -e exit silent.
 KIRO_SESSIONS=0
 if [[ -d "$HERMES_SESSIONS" ]]; then
-  KIRO_SESSIONS=$(grep -ril "Aku.*Kiro\|\"Kiro\"" "$HERMES_SESSIONS" 2>/dev/null | wc -l)
+  KIRO_SESSIONS=$( (grep -ril "Aku.*Kiro\|\"Kiro\"" "$HERMES_SESSIONS" 2>/dev/null || true) | wc -l )
 fi
 
 # Detect typo "Aku Kir" di config (bug from previous run)
