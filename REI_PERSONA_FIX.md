@@ -113,7 +113,7 @@ Repo ai-holding tetap jadi source of truth — kalau MAIN_SOUL.md update, tingga
 
 ---
 
-**Next:** Setelah Rei aktif, lanjut Paperclip integration sesuai PR #19 SOP.
+**Next:** Setelah Rei aktif, lanjut Paperclip setup sesuai `knowledge/sop/paperclip-setup.md` (fresh setup post-PR #25).
 
 ---
 

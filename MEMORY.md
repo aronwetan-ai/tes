@@ -69,7 +69,7 @@ Inheritance: Root → Company → Agent. Konflik prinsip → atas menang. Konfli
 20. **Twitter/X integration (2026-05-18)**: xurl CLI (bundled di Hermes). Shared account, otonom penuh sesuai UPGRADE2. Detail: `knowledge/sop/twitter-xurl-setup.md`.
 21. **Discord integration (2026-05-18)**: User token (selfbot), akun disposable. Hermes native gateway. Detail: `knowledge/sop/discord-setup.md`.
 22. **Voice command (2026-05-18)**: Local Whisper STT (`small` model). Voice note Telegram → auto-transcribe → process seperti text command. 100% offline. Detail: `knowledge/sop/voice-command-setup.md`. Script: `bin/stt.py`.
-23. **Paperclip integration (2026-05-18)**: Full org scope — Drayco/Rei as CEO, 3 company employees (NexusAI CTO, BrandFlow CMO, Crypto CEO). Budget: token/day (500k Rei, 200k NexusAI, 150k BrandFlow, 150k Crypto). Heartbeat: 1 hour. Governance: Fathur = Board Member, Tier 3 actions require approval. Paperclip = enhancement layer, NOT dependency — system still 100% functional without it. Detail: `knowledge/sop/paperclip-integration.md`.
+23. **Paperclip integration v2 fresh setup (2026-05-18)**: Reset SOP lama yang banyak inaccuracies (port 4040 → seharusnya 3100, fictional CLI flags, wrong budget format). Strategy: fork Paperclip source + register `hermes_local` adapter built-in (more stable than external plugin loader). Budget format: `budgetMonthlyCents` (US cents/month), bukan tokens/day. Initial scope: Rei sebagai CEO solo dulu (Step 1-11 di SOP), expand ke 3 company heads setelah stable. Identity sudah self-sufficient via `install-rei-persona.sh` — Paperclip nggak override identity layer. Detail: `knowledge/sop/paperclip-setup.md` (replaces deleted `paperclip-integration.md` + `paperclip-rebuild.md`).
 
 ---
 
