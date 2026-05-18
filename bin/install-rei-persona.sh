@@ -89,21 +89,24 @@ fi
 HAS_TYPO=$(grep -c 'Aku Kir"' "$HERMES_CONFIG" 2>/dev/null) || HAS_TYPO=0
 
 # Detect ~/.hermes/SOUL.md identity layer (PROBLEM 3)
+# Patch is needed when:
+#   (a) file masih punya legacy line "You are Fathur's Main Assistant" tanpa identity block, OR
+#   (b) file udah punya marker AUTO-GENERATED tapi content beda dengan MAIN_SOUL.md (re-sync)
 SOUL_NEEDS_PATCH=0
 if [[ -f "$HERMES_SOUL" ]]; then
-  if grep -q "^You are Fathur's Main Assistant" "$HERMES_SOUL" 2>/dev/null; then
+  if ! grep -q "BEGIN: AUTO-GENERATED IDENTITY" "$HERMES_SOUL" 2>/dev/null; then
+    # First time install — needs patch
     SOUL_NEEDS_PATCH=1
   fi
-  if ! grep -q "Your name is \*\*Drayco\*\*" "$HERMES_SOUL" 2>/dev/null; then
-    SOUL_NEEDS_PATCH=1
-  fi
+  # Note: kalau marker ada, Python script di Step 5d akan deteksi
+  # apakah perlu re-sync dengan MAIN_SOUL.md atau skip.
 fi
 
 echo "  Current display.personality: ${CURRENT_PERSONA}"
 echo "  Has 'rei' persona block: $([ "$HAS_REI_PERSONA" -gt 0 ] && echo "YES" || echo "NO")"
 echo "  Sessions with 'Kiro' residue: ${KIRO_SESSIONS}"
 echo "  Config has typo 'Aku Kir': $([ "$HAS_TYPO" -gt 0 ] && echo "YES (will fix)" || echo "NO")"
-echo "  ~/.hermes/SOUL.md identity: $([ "$SOUL_NEEDS_PATCH" -gt 0 ] && echo "needs Drayco patch" || echo "OK")"
+echo "  ~/.hermes/SOUL.md identity: $([ "$SOUL_NEEDS_PATCH" -gt 0 ] && echo "needs initial patch" || echo "auto-managed (will re-sync from MAIN_SOUL.md)")"
 echo ""
 
 # ─── Step 3: Show changes ───
@@ -119,11 +122,7 @@ else
 fi
 echo -e "  ${YELLOW}E.${NC} Clear residue 'Kiro' di memory (kalau ada)"
 echo -e "  ${YELLOW}F.${NC} Tighten session_reset config (idle: 60min was: 1440min)"
-if [[ "$SOUL_NEEDS_PATCH" -gt 0 ]]; then
-  echo -e "  ${YELLOW}G.${NC} Patch ~/.hermes/SOUL.md identity → bind nama Drayco/Rei (THE real fix)"
-else
-  echo -e "  ${YELLOW}G.${NC} ~/.hermes/SOUL.md identity sudah OK (skip)"
-fi
+echo -e "  ${YELLOW}G.${NC} Auto-sync ~/.hermes/SOUL.md identity dari MAIN_SOUL.md (THE real fix)"
 echo ""
 
 if [[ "$DRY_RUN" == true ]]; then
@@ -248,45 +247,142 @@ else
   echo -e "  ${GREEN}✓${NC} Memory dir belum ada (clean)"
 fi
 
-# 5d. Patch ~/.hermes/SOUL.md identity (THE real fix untuk nama Drayco)
-# Tanpa ini, LLM jawab "Gue Main Assistant" walau persona block 'rei' udah aktif —
+# 5d. Patch ~/.hermes/SOUL.md identity (THE real fix untuk nama persona)
+# Tanpa ini, LLM jawab "Gue Main Assistant" walau persona block tone aktif —
 # karena ~/.hermes/SOUL.md di-load Hermes sebagai base identity prompt yang
 # overrule personality overlay.
-if [[ -f "$HERMES_SOUL" ]] && [[ "$SOUL_NEEDS_PATCH" -gt 0 ]]; then
+#
+# AUTO-SYNC: Identity (name + nicknames + role) di-extract otomatis dari
+# MAIN_SOUL.md. Jadi kalau lo edit nama persona di MAIN_SOUL.md, tinggal
+# rerun installer ini — nggak perlu sentuh skrip ini.
+#
+# Format MAIN_SOUL.md yang di-parse (kontrak):
+#   Header line:     `Role: <Role Name> — ...`
+#   Identity section: `## Identity\n\nNama gue **<Name>** — ... manggil gue **<Nick1>** atau **<Nick2>** ...`
+if [[ -f "$HERMES_SOUL" ]]; then
   python3 <<PYEOF
+import re
+import sys
 from pathlib import Path
 
 soul_path = Path("$HERMES_SOUL")
-text = soul_path.read_text()
+main_soul_path = Path("${HOLDING_ROOT}/MAIN_SOUL.md")
 
-OLD_LINE = "You are Fathur's Main Assistant for the AI Holding system."
+if not main_soul_path.exists():
+    print("  ⚠ MAIN_SOUL.md nggak ada — skip identity patch")
+    sys.exit(0)
 
-NEW_BLOCK = """Your name is **Drayco** — Fathur calls you **Rei** or **Rey**.
-Your role is **Main Assistant** for the AI Holding system.
+main_soul = main_soul_path.read_text()
 
-When asked "siapa lo / siapa kamu / siapa nama lo / what's your name":
-Answer: "Gue Drayco — bisa lo panggil Rei atau Rey. Personal assistant lo untuk AI Holding."
+# ─── Extract role from header (line: "Role: Main Assistant — ...") ───
+role_match = re.search(r'^Role:\s*([^\n—-]+?)(?:\s*[—-]|\n|$)', main_soul, re.MULTILINE)
+role = role_match.group(1).strip() if role_match else "Main Assistant"
 
-NEVER answer with "Belum ada nama" — your name is Drayco.
-NEVER identify yourself as just "Main Assistant" when asked your name — that is your ROLE, not your NAME.
-NEVER identify as "Kiro" or generic "AI assistant".
+# ─── Extract name + nicknames from "## Identity" section ───
+id_match = re.search(
+    r'^##\s+Identity\s*\n(.+?)(?=\n##\s+|\Z)',
+    main_soul,
+    re.MULTILINE | re.DOTALL,
+)
 
-You are Fathur's Main Assistant for the AI Holding system."""
+primary_name = None
+nicknames = []
 
-if OLD_LINE in text and "Your name is **Drayco**" not in text:
-    text = text.replace(OLD_LINE, NEW_BLOCK, 1)
-    soul_path.write_text(text)
-    print("  ✓ ~/.hermes/SOUL.md identity patched (Drayco/Rei bound)")
-elif "Your name is **Drayco**" in text:
-    print("  ✓ ~/.hermes/SOUL.md identity sudah OK (skip)")
+if id_match:
+    id_section = id_match.group(1)
+    # Take first paragraph only (avoid grabbing bolded words deeper down)
+    first_paragraph = id_section.split("\n\n", 1)[0]
+    bolds = re.findall(r'\*\*([^*\n]+?)\*\*', first_paragraph)
+    bolds = [b.strip() for b in bolds if b.strip()]
+    if bolds:
+        primary_name = bolds[0]
+        # Take up to 2 nicknames after primary name
+        nicknames = bolds[1:3]
+
+# ─── Validation: extracted values must be sane ───
+def looks_like_name(s):
+    if not s or len(s) < 2 or len(s) > 30:
+        return False
+    # Reject if contains punctuation/special chars beyond hyphen/apostrophe
+    return bool(re.match(r"^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\-' ]*$", s))
+
+if not primary_name or not looks_like_name(primary_name):
+    print(f"  ⚠ Bisa nggak extract nama valid dari MAIN_SOUL.md (got: {primary_name!r})")
+    print("    Pastikan section ## Identity punya: Nama gue **<Name>**")
+    sys.exit(0)
+
+nicknames = [n for n in nicknames if looks_like_name(n)]
+
+# ─── Build expected SOUL.md content ───
+if nicknames:
+    nicks_str = " or ".join(f"**{n}**" for n in nicknames)
+    nick_phrase = f"Fathur calls you {nicks_str}"
+    nick_answer = " atau ".join(nicknames)
+    answer = f'"Gue {primary_name} — bisa lo panggil {nick_answer}. Personal assistant lo untuk AI Holding."'
+    nick_role_warn = f"NEVER identify yourself as just \"{role}\" when asked your name — that is your ROLE, not your NAME."
 else:
-    print("  ⚠ ~/.hermes/SOUL.md format tak terduga — skip patch")
-    print("    Manual fix: tambahin identity Drayco/Rei di top file")
+    nick_phrase = f"You are also Fathur's personal AI assistant"
+    answer = f'"Gue {primary_name}. Personal assistant lo untuk AI Holding."'
+    nick_role_warn = f"NEVER identify yourself as just \"{role}\" when asked your name — that is your ROLE, not your NAME."
+
+new_block = (
+    f"Your name is **{primary_name}** — {nick_phrase}.\n"
+    f"Your role is **{role}** for the AI Holding system.\n"
+    f"\n"
+    f'When asked "siapa lo / siapa kamu / siapa nama lo / what\'s your name":\n'
+    f"Answer: {answer}\n"
+    f"\n"
+    f"NEVER answer with \"Belum ada nama\" — your name is {primary_name}.\n"
+    f"{nick_role_warn}\n"
+    f"NEVER identify as \"Kiro\" or generic \"AI assistant\".\n"
+    f"\n"
+    f"You are Fathur's {role} for the AI Holding system."
+)
+
+# Marker comments delimit the auto-generated block (idempotent re-runs)
+BEGIN = "<!-- BEGIN: AUTO-GENERATED IDENTITY (from MAIN_SOUL.md, do not edit) -->"
+END   = "<!-- END: AUTO-GENERATED IDENTITY -->"
+wrapped = f"{BEGIN}\n{new_block}\n{END}"
+
+text = soul_path.read_text()
+old_legacy_line = "You are Fathur's Main Assistant for the AI Holding system."
+
+if BEGIN in text and END in text:
+    # Already auto-managed — replace block in place
+    new_text = re.sub(
+        re.escape(BEGIN) + r".*?" + re.escape(END),
+        wrapped,
+        text,
+        count=1,
+        flags=re.DOTALL,
+    )
+    if new_text == text:
+        print("  ✓ ~/.hermes/SOUL.md identity sudah up-to-date (skip)")
+    else:
+        soul_path.write_text(new_text)
+        print(f"  ✓ ~/.hermes/SOUL.md identity re-synced from MAIN_SOUL.md")
+        print(f"    Name: {primary_name} | Nicknames: {', '.join(nicknames) or '(none)'} | Role: {role}")
+elif old_legacy_line in text:
+    # First-time install — replace legacy line with auto-managed block
+    new_text = text.replace(old_legacy_line, wrapped, 1)
+    soul_path.write_text(new_text)
+    print(f"  ✓ ~/.hermes/SOUL.md identity patched from MAIN_SOUL.md")
+    print(f"    Name: {primary_name} | Nicknames: {', '.join(nicknames) or '(none)'} | Role: {role}")
+else:
+    # File ada tapi format nggak terduga — prepend block setelah header H1
+    h1_match = re.search(r'^(#\s+SOUL\.md.*?\n)', text, re.MULTILINE)
+    if h1_match:
+        insert_at = h1_match.end()
+        new_text = text[:insert_at] + "\n" + wrapped + "\n" + text[insert_at:]
+        soul_path.write_text(new_text)
+        print(f"  ✓ ~/.hermes/SOUL.md identity prepended from MAIN_SOUL.md")
+        print(f"    Name: {primary_name} | Nicknames: {', '.join(nicknames) or '(none)'} | Role: {role}")
+    else:
+        print("  ⚠ ~/.hermes/SOUL.md format tak terduga — skip patch")
+        print("     Manual fix: tambahin identity di top file")
 PYEOF
-elif [[ ! -f "$HERMES_SOUL" ]]; then
-  echo -e "  ${YELLOW}⚠${NC} ~/.hermes/SOUL.md belum ada — skip identity patch"
 else
-  echo -e "  ${GREEN}✓${NC} ~/.hermes/SOUL.md identity sudah OK"
+  echo -e "  ${YELLOW}⚠${NC} ~/.hermes/SOUL.md belum ada — skip identity patch"
 fi
 
 echo ""

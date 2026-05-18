@@ -214,7 +214,32 @@ TAPI Hermes runtime nggak otomatis baca file ini. Persona harus di-inject ke
    "Your name is Drayco/Rei, role-nya Main Assistant". Layer ini critical — tanpa
    ini LLM tetep jawab "Gue Main Assistant" walau persona overlay aktif.
 
-**Setup awal / setelah update major / setelah Hermes reset:**
+### Auto-sync identity dari MAIN_SOUL.md
+
+Installer **auto-extract identity** dari file ini, jadi kalau lo ganti nama persona,
+tinggal edit di sini lalu rerun installer — nggak perlu sentuh skrip.
+
+**Format kontrak yang di-parse installer (jangan diubah strukturnya):**
+
+```markdown
+Role: <Role Name> — <description>     ← header line, role di-extract dari sini
+
+## Identity                           ← section header (persis ini)
+
+Nama gue **<Name>** — ... manggil gue **<Nick1>** atau **<Nick2>** ...
+                  ↑                              ↑                ↑
+            primary name              up to 2 nicknames (optional)
+```
+
+**Contoh edit:** Mau ganti nama dari "Drayco" jadi "Sora", nicknames "Sky/Aki":
+1. Edit baris "Nama gue **Sora** — Fathur panggil gue **Sky** atau **Aki**..."
+2. Run: `bash bin/install-rei-persona.sh --apply`
+3. Restart Hermes — selesai
+
+Identity block di `~/.hermes/SOUL.md` dibungkus marker `<!-- BEGIN: AUTO-GENERATED IDENTITY ... -->`
+biar idempotent: rerun installer = re-sync dari MAIN_SOUL.md, bukan duplicate.
+
+### Setup awal / setelah update major / setelah Hermes reset
 
 ```bash
 # Apply patch ke Hermes runtime (3 layer sekaligus)
